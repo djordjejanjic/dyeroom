@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 412" width="640" height="412" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <title>A colour slide film in cross-section</title>
+  <!-- Light from the lens, falling on the top layer -->
+  <path d="M206 6v40" stroke="#b3aa9b" stroke-width="2"/>
+  <path d="M199 38l7 10 7-10" fill="none" stroke="#b3aa9b" stroke-width="2" stroke-linejoin="round"/>
+  <text x="222" y="32" font-size="16" fill="#b3aa9b">Light from the lens</text>
+  <text x="448" y="32" font-size="16" fill="#b3aa9b">Ends up as</text>
+
+  <!-- The layers, top to bottom -->
+  <rect x="0" y="62" width="420" height="64" rx="4" fill="#2f4a80"/>
+  <text x="20" y="100" font-size="19" fill="#f3ece0">Blue-sensitive layer</text>
+  <rect x="0" y="132" width="420" height="34" rx="4" fill="#7d6a24"/>
+  <text x="20" y="154" font-size="16" fill="#f3ece0">Yellow filter layer</text>
+  <rect x="0" y="172" width="420" height="64" rx="4" fill="#2f6a3d"/>
+  <text x="20" y="210" font-size="19" fill="#f3ece0">Green-sensitive layer</text>
+  <rect x="0" y="242" width="420" height="64" rx="4" fill="#84352b"/>
+  <text x="20" y="280" font-size="19" fill="#f3ece0">Red-sensitive layer</text>
+  <rect x="0.75" y="312.75" width="418.5" height="86.5" rx="4" fill="#2c2925" stroke="#4a443c" stroke-width="1.5"/>
+  <text x="20" y="362" font-size="19" fill="#b3aa9b">Clear base</text>
+
+  <!-- What each layer becomes -->
+  <circle cx="462" cy="94" r="13" fill="#e8c430"/>
+  <text x="486" y="100" font-size="19" fill="#ece4d4">Yellow dye</text>
+  <text x="448" y="154" font-size="15" fill="#857d71">Removed in the bleach</text>
+  <circle cx="462" cy="204" r="13" fill="#c2408c"/>
+  <text x="486" y="210" font-size="19" fill="#ece4d4">Magenta dye</text>
+  <circle cx="462" cy="274" r="13" fill="#2aa3bb"/>
+  <text x="486" y="280" font-size="19" fill="#ece4d4">Cyan dye</text>
+</svg>

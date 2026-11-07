@@ -1,0 +1,14 @@
+{
+  "name": "Dyeroom",
+  "short_name": "Dyeroom",
+  "description": "Develop your raw photographs on simulated film.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#141311",
+  "theme_color": "#141311",
+  "icons": [
+    {"src": "/static/icon.svg", "type": "image/svg+xml", "sizes": "any"},
+    {"src": "/static/icon-192.png", "type": "image/png", "sizes": "192x192"},
+    {"src": "/static/icon-512.png", "type": "image/png", "sizes": "512x512"}
+  ]
+}

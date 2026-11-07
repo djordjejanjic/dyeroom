@@ -1,0 +1,11 @@
+.venv
+out
+web-data
+**/__pycache__
+**/*.egg-info
+dyeroom/data/cache/*.onnx
+dyeroom/data/cache/macraw
+tools
+Dockerfile
+.git
+docs

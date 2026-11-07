@@ -1,0 +1,55 @@
+<h1>Privacy notice</h1>
+<p class="updated">Last updated {{updated}}</p>
+<!--if accounts--><p>In short: your photographs are never stored. We keep your account (who you are, as Apple or Google tell us, and the film you have) and nothing else about you. There is no advertising and no tracking.</p><!--end--><!--if free--><p>In short: your photographs are never stored, and there are no accounts. There is no advertising and no tracking.</p><!--end-->
+
+<h2>Who is responsible</h2>
+<p>{{legal_name}}, {{legal_address}}, is the controller of the personal data described here. For anything about your data, write to {{contact_email}}.</p>
+
+<h2>Your photographs</h2>
+<p>Photographs you add are held {{where_held}} only while you work on them. They are deleted, with everything developed from them, when you close the page, after {{idle_minutes}} minutes without activity, or {{keep_hours}} hours after they arrive at the latest. They are never copied to backups, never looked at by anyone and never used to train any model. Colourising runs on our own server: no photograph is sent to anyone else.</p>
+<p>Files you export carry your original’s metadata (camera, date, captions, and location if your camera recorded it) unchanged, as your camera wrote it. We don’t read it for any other purpose.</p>
+
+<h2>What we keep, why, and for how long</h2>
+<div class="wide"><table>
+<tr><th>What</th><th>Why, and on what basis</th><th>How long</th></tr>
+<!--if accounts--><tr><td>Your account: which service you signed in with (Apple or Google) and its identifier for you, your email address, your name if it was given, and when the account was made</td><td>To give you an account and the film you have paid for (our contract with you)</td><td>Until you delete the account</td></tr>
+<tr><td>The record of your film: frames given, bought, used and given back; for each photograph developed, a random number, when and how it was paid for (never its name or the picture); your plans’ status and dates, and Paddle’s customer number for you</td><td>To know what you have paid for and used (contract), and to keep accounts (legal obligation)</td><td>While you have an account. After you delete it we keep only the sign-in identifier and this record, without your email or name, so that purchases stay accounted for and free frames are not given twice (legitimate interest)</td></tr>
+<tr><td>Sign-in: a session cookie in your browser; the server keeps only a hash of it</td><td>To keep you signed in (contract)</td><td>{{session_days}} days, or until you sign out</td></tr>
+<tr><td>Fingerprints: when you add a photograph, a keyed hash of the file. It cannot be turned back into the picture or compared across accounts</td><td>So that adding the very same file again costs nothing (contract)</td><td>{{fingerprint_days}} days</td></tr>
+<tr><td>Presets you save</td><td>To keep your settings (contract)</td><td>Until you delete them or your account</td></tr><!--end-->
+<tr><td>Your IP address, held in the server’s memory only, never written to disk</td><td>To keep use fair and prevent abuse, for example how many <!--if accounts-->new accounts one address can make<!--end--><!--if free-->photographs one address can develop in an hour<!--end--> (legitimate interest)</td><td>24 hours at most</td></tr>
+</table></div>
+<p>We don’t keep logs of visits. {{network_analytics}}The lab keeps statistics of its own work (how long developments take and whether they fail, by film and kind of file) and counts of steps such as samples tried and photographs added, which say nothing about who asked.<!--if accounts--> The account database is copied once a day and the copies are kept {{backup_days}} days{{backup_offsite}}.<!--end--></p>
+
+<h2>Who else receives data</h2>
+<ul>
+<!--if accounts--><li><b>Apple or Google</b>, when you sign in with them: they confirm who you are, and learn that you signed in to Dyeroom. Their own privacy policies apply.</li>
+<li><b>Paddle.com</b>, our reseller and Merchant of Record, when you buy film: Paddle handles the payment, tax and receipts as a controller in its own right, under its <a href="https://www.paddle.com/legal/privacy">privacy policy</a>. We never see your card details.</li><!--end--><!--if free--><li><b>Buy Me a Coffee</b>, only if you choose to give: you donate on its own site, under its own privacy policy, and we see only what it shows us of your donation.</li><!--end-->
+<li><b>Our hosting provider</b>: the server is hosted {{hosting}}, processing data only on our instructions.</li>{{network_item}}
+<li>Professional advisers, and authorities where the law requires it.</li>
+</ul>
+<p>We don’t sell personal data or share it for advertising.</p>
+
+<h2>Transfers abroad</h2>
+<p><!--if accounts-->Apple, Google and Paddle<!--end--><!--if free-->Buy Me a Coffee, if you donate,<!--end--> may process your data in other countries, including the United States. They protect these transfers with the European Commission’s standard contractual clauses or an adequacy decision. When we transfer personal data out of the European Economic Area, the United Kingdom or {{legal_country}} ourselves, we use the same safeguards.</p>
+
+<h2>Cookies and storage in your browser</h2>
+<ul>
+<!--if accounts--><li><b>dyeroom_session</b> keeps you signed in ({{session_days}} days). Necessary for the service.</li>
+<li><b>dyeroom_login</b> connects your return from Apple or Google to the sign-in you began (10 minutes). Necessary.</li>
+<li>Paddle’s checkout sets its own cookies when you buy film.</li><!--end-->
+<li>Your browser keeps your settings<!--if accounts--> and, when you are not signed in, your presets<!--end--><!--if free-->, your presets, and how many photographs you have developed, so that it asks for a coffee only now and then<!--end-->. They never leave your browser.</li>
+</ul>
+<p><!--if accounts-->There are no analytics or advertising cookies, so there is nothing to agree to.<!--end--><!--if free-->Dyeroom sets no cookies, so there is nothing to agree to.<!--end--></p>
+
+<h2>Your rights</h2>
+<p>You can ask to see the personal data we hold about you, to correct it, to have it erased, to restrict or object to how we use it, and to receive it in a file you can take elsewhere. Where we rely on your consent, you can withdraw it at any time.<!--if accounts--> Deleting your account in the app (Account, Delete account) erases your email, name, presets and fingerprints at once.<!--end--> Write to {{contact_email}}; we answer within one month. You can also complain to the data protection authority where you live, or in {{legal_country}}.</p>
+
+<h2>Security</h2>
+<p>Everything travels over HTTPS. <!--if accounts-->Session tokens and fingerprints are kept only as hashes, photographs<!--end--><!--if free-->Photographs are kept<!--end--> only for as long as you work on them, and only we can reach the server.</p>
+
+<h2>Children</h2>
+<p>Dyeroom is not meant for anyone under 16, and we don’t knowingly keep data about them.</p>
+
+<h2>Changes</h2>
+<p>When this notice changes, the new version appears here with its date.</p>

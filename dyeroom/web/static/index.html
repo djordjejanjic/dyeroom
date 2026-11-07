@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dyeroom: the lab</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#141311">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="manifest" href="/static/site.webmanifest">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+
+<header class="topbar">
+  <span class="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="1" width="18" height="18" rx="3" class="card"></rect><rect x="4" y="6" width="12" height="8" rx="1" class="window"></rect><rect x="6" y="3" width="8" height="1.5" class="print"></rect></svg>
+    Dyeroom
+  </span>
+  <span class="sep" aria-hidden="true"></span>
+  <div class="picker">
+    <button class="picker-button" id="film-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="film-menu" title="Film">
+      <span class="film-chip" id="film-chip" aria-hidden="true"></span><span id="film-name">Sunday 64</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 10l4.5 4.5 4.5-4.5"/></svg>
+    </button>
+    <div class="menu" id="film-menu" role="menu" aria-label="Film" hidden></div>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn" id="sign-in" hidden>Sign in</button>
+  <button class="btn account" id="account" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.6"/><rect x="6.5" y="9.5" width="11" height="5" rx="0.6"/><path d="M6.5 7.2h.01M9.5 7.2h.01M12.5 7.2h.01M15.5 7.2h.01M18.5 7.2h.01M6.5 16.8h.01M9.5 16.8h.01M12.5 16.8h.01M15.5 16.8h.01M18.5 16.8h.01"/></svg><span id="account-label"></span></button>
+  <label class="btn with-icon" id="add" title="Raw files from most cameras, or JPEG, HEIC, TIFF and PNG (O)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg><span>Add photographs</span><input type="file" id="picker" multiple hidden></label>
+  <div class="split-button">
+    <button class="btn primary with-icon" id="export-jpg" type="button" disabled title="Export JPEG (E)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5v10.5M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg><span>Export</span></button>
+    <button class="btn primary more" id="export-more" type="button" disabled aria-haspopup="menu" aria-expanded="false" aria-controls="export-menu" aria-label="Choose the export format"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 10l4.5 4.5 4.5-4.5"/></svg></button>
+    <div class="menu" id="export-menu" role="menu" aria-label="Export" hidden></div>
+  </div>
+</header>
+
+<div class="workspace">
+  <nav class="library" id="library" aria-label="Frames">
+    <div class="panel-head">
+      <h2><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.6"/><rect x="6.5" y="9.5" width="11" height="5" rx="0.6"/><path d="M6.5 7.2h.01M9.5 7.2h.01M12.5 7.2h.01M15.5 7.2h.01M18.5 7.2h.01M6.5 16.8h.01M9.5 16.8h.01M12.5 16.8h.01M15.5 16.8h.01M18.5 16.8h.01"/></svg>Frames</h2>
+      <span class="panel-tools">
+        <button class="link" id="develop-all" hidden title="Develop every frame not developed yet, each with its own settings">Develop all</button>
+        <button class="link" id="clear" hidden title="Delete every frame from the lab now">Clear</button>
+        <span class="count" id="count"></span>
+      </span>
+    </div>
+    <ul class="photos" id="photos"></ul>
+    <p class="library-empty" id="library-empty">Your frames line up here as they come out of the developer.</p>
+  </nav>
+
+  <main class="viewer">
+    <div class="toolbar">
+      <div class="seg" id="compare" role="group" aria-label="Compare">
+        <button data-compare="split" aria-pressed="true" title="Raw and result side by side (1)">Split</button>
+        <button data-compare="raw" aria-pressed="false" title="The raw; click again for the result (2, or \ to switch)">Raw</button>
+        <button data-compare="previous" aria-pressed="false" title="The development before this one, with the same finishing adjustments (3)">Previous</button>
+        <button data-compare="slide" aria-pressed="false" title="The result; click again for the raw (4, or \ to switch)">Slide</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="mono meta" id="meta"></span>
+      <span class="history" role="group" aria-label="Undo and redo">
+        <button class="tool" id="undo" type="button" title="Undo" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14.5 4.5 10 9 5.5"/><path d="M4.5 10h10a5 5 0 0 1 0 10H12"/></svg></button>
+        <button class="tool" id="redo" type="button" title="Redo" aria-label="Redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14.5 19.5 10 15 5.5"/><path d="M19.5 10h-10a5 5 0 0 0 0 10H12"/></svg></button>
+      </span>
+      <button class="tool" id="fullscreen" type="button" title="Full screen (F)" aria-label="Full screen"><svg class="enter" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9V4.5H9M15 4.5h4.5V9M19.5 15v4.5H15M9 19.5H4.5V15"/></svg><svg class="leave" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5V9H4.5M19.5 9H15V4.5M15 19.5V15h4.5M4.5 15H9v4.5"/></svg></button>
+    </div>
+
+    <div class="stage" id="stage">
+      <section class="welcome" id="welcome">
+        <div class="welcome-top">
+          <figure class="mount">
+            <span class="mount-print mount-top">Sunday 64</span>
+            <span class="mount-window"><img src="/static/sample-slide.jpg" alt="A developed Sunday 64 slide in its mount"></span>
+            <span class="mount-print mount-bottom"><span>Dyeroom</span><span class="mono" id="mount-date"></span><span class="mono">01</span></span>
+          </figure>
+          <h1>Developed <em>the long way.</em></h1>
+        </div>
+        <div class="welcome-rest">
+          <p class="pitch" id="pitch">Leave your photographs here, raw or from your phone. Each one is exposed on Sunday 64 and taken through the whole reversal process, from the first developer to the bleach, before it reaches the light table.</p>
+          <div class="actions">
+            <button class="btn primary" id="choose">Choose photographs</button>
+            <button class="btn" id="sample" hidden>Try a sample</button>
+          </div>
+          <div class="features">
+            <button class="feature" id="fact-film" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.6"/><rect x="6.5" y="9.5" width="11" height="5" rx="0.6"/><path d="M6.5 7.2h.01M9.5 7.2h.01M12.5 7.2h.01M15.5 7.2h.01M18.5 7.2h.01M6.5 16.8h.01M9.5 16.8h.01M12.5 16.8h.01M15.5 16.8h.01M18.5 16.8h.01"/></svg><span class="feature-text"><b id="fact-film-title"></b><span id="fact-film-note"></span></span></button>
+            <a class="feature" id="fact-free" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5h11v4.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.6a2.4 2.4 0 0 1 0 4.8H16"/><path d="M9 3.8c-.6.7-.6 1.5 0 2.2M12.5 3.8c-.6.7-.6 1.5 0 2.2"/></svg><span class="feature-text"><b>Free to use</b><span>Support it with a coffee</span></span></a>
+            <div class="feature" id="fact-privacy" hidden title=""><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.4v2"/></svg><span class="feature-text"><b>Nothing is stored</b><span>Deleted when you leave</span></span></div>
+            <div class="feature" id="fact-formats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7.2 10 5h4l1.5 2.2"/><rect x="3" y="7.2" width="18" height="12" rx="2"/><circle cx="12" cy="13.2" r="3.4"/></svg><span class="feature-text"><b>Raw or phone photos</b><span id="fact-formats-note">From most cameras and phones</span></span></div>
+          </div>
+          <nav class="legal-links" aria-label="Legal"><button type="button" id="about-link">About</button><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds" class="refunds-link">Refunds</a><a class="contact-link" hidden>Contact</a></nav>
+        </div>
+      </section>
+
+      <figure class="frame" id="frame" hidden>
+        <div class="pane" id="pane-after"><div class="film"><img id="after" alt="Developed on Sunday 64"><canvas id="graded" hidden></canvas></div></div>
+        <div class="pane" id="pane-before"><div class="film"><img id="before" alt="The raw file, rendered neutrally"><canvas id="graded-before" hidden></canvas></div></div>
+        <div class="divider" id="divider" aria-hidden="true"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9.5 7.5 5 12l4.5 4.5M14.5 7.5 19 12l-4.5 4.5"/></svg></span></div>
+        <span class="tag tag-raw">Raw</span>
+        <span class="tag tag-slide">Sunday 64</span>
+        <div class="crop-box" id="crop-box" hidden>
+          <span class="thirds" aria-hidden="true"></span>
+          <span class="crop-handle corner" data-handle="nw"></span><span class="crop-handle corner" data-handle="ne"></span>
+          <span class="crop-handle corner" data-handle="sw"></span><span class="crop-handle corner" data-handle="se"></span>
+          <span class="crop-handle edge" data-handle="n"></span><span class="crop-handle edge" data-handle="s"></span>
+          <span class="crop-handle edge" data-handle="w"></span><span class="crop-handle edge" data-handle="e"></span>
+        </div>
+      </figure>
+
+      <div class="working" id="working" hidden>
+        <img class="lab original" id="original" alt="" hidden>
+        <canvas class="lab" id="lab" aria-hidden="true"></canvas>
+        <div class="working-text">
+          <p class="stage-name" id="stage-name"></p>
+          <p class="step" id="step"></p>
+          <div class="rule"><div class="rule-fill" id="rule-fill"></div></div>
+          <div class="working-actions" id="working-ready" hidden>
+            <button class="btn primary" id="develop-this" title="Develop this frame (D)">Develop</button>
+            <button class="btn" id="develop-rest" hidden title="Develop every frame not developed yet, each with its own settings">Develop all</button>
+          </div>
+          <button class="btn primary" id="working-buy" hidden>Buy film</button>
+          <div class="working-actions" id="working-mono" hidden>
+            <button class="btn primary" id="as-print">Print on Monday 400</button>
+            <button class="btn" id="as-colour" hidden title="An AI model guesses the colours; the tones stay the photograph's own">Colourise, then develop</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="infobar" id="infobar"></div>
+  </main>
+
+  <div class="splitter" id="split-library" data-pane="library" role="separator" aria-orientation="vertical" aria-controls="library" aria-label="Width of the frames" tabindex="0" title="Drag to resize; double-click for the usual width"></div>
+  <div class="splitter" id="split-inspector" data-pane="inspector" role="separator" aria-orientation="vertical" aria-controls="inspector" aria-label="Width of the tools" tabindex="0" title="Drag to resize; double-click for the usual width"></div>
+
+  <aside class="inspector" id="inspector" aria-label="Inspector">
+    <div class="presets">
+      <button class="preset-button empty" id="preset-button" aria-haspopup="menu" aria-expanded="false" aria-controls="preset-menu" title="Presets">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h9.5M17.5 8H20M4 16h2.5M10.5 16H20"/><circle cx="15.5" cy="8" r="2"/><circle cx="8.5" cy="16" r="2"/></svg>
+        <span class="preset-name" id="preset-current">No presets yet</span>
+        <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 10l4.5 4.5 4.5-4.5"/></svg>
+      </button>
+      <button class="preset-add" id="preset-new" title="Save these settings as a preset" aria-label="Save these settings as a preset">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
+      </button>
+      <div class="menu" id="preset-menu" role="menu" aria-label="Presets" hidden></div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Tools">
+      <button class="tab tab-frames" role="tab" id="tab-frames" data-tab="frames" aria-controls="library" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.6"/><rect x="6.5" y="9.5" width="11" height="5" rx="0.6"/><path d="M6.5 7.2h.01M9.5 7.2h.01M12.5 7.2h.01M15.5 7.2h.01M18.5 7.2h.01M6.5 16.8h.01M9.5 16.8h.01M12.5 16.8h.01M15.5 16.8h.01M18.5 16.8h.01"/></svg><span>Frames<span class="tab-count mono" id="tab-count"></span></span></button>
+      <button class="tab" role="tab" id="tab-develop" data-tab="develop" aria-controls="sect-develop" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5l3.4 5.9M20.5 12h-6.8M16.3 19.4 12.9 13.5M7.7 19.4l3.4-5.9M3.5 12h6.8M7.7 4.6l3.4 5.9"/></svg><span>Develop</span></button>
+      <button class="tab" role="tab" id="tab-colour" data-tab="colour" aria-controls="sect-colour" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9.5" r="5"/><circle cx="15" cy="9.5" r="5"/><circle cx="12" cy="14.5" r="5"/></svg><span>Colour</span></button>
+      <button class="tab" role="tab" id="tab-tones" data-tab="tones" aria-controls="sect-tones" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path class="fill" d="M12 3.5a8.5 8.5 0 0 1 0 17z"/></svg><span>Tones</span></button>
+      <button class="tab" role="tab" id="tab-crop" data-tab="crop" aria-controls="sect-crop" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 2.5v15h15M2.5 6.5h15v15"/></svg><span>Crop</span></button>
+    </nav>
+    <section class="sect" id="sect-develop" role="tabpanel" aria-labelledby="tab-develop">
+      <div class="sect-body">
+        <div class="rows">
+          <span class="label" data-film="colour">Seen on</span>
+          <div class="seg" role="group" aria-label="Seen on" data-film="colour">
+            <button data-key="view" data-value="lightbox">Light box</button>
+            <button data-key="view" data-value="projector">Projector</button>
+          </div>
+          <span class="label" data-film="colour">Light</span>
+          <div class="seg" role="group" aria-label="Light" data-film="colour">
+            <button data-key="light" data-value="native" title="Daylight film sees the scene's real light">As it was</button>
+            <button data-key="light" data-value="balanced" title="As if everything were lit by daylight">Daylight</button>
+          </div>
+          <span class="label" id="filter-label" data-film="colour">Filter</span>
+          <div class="dropdown" id="filter" data-film="colour"></div>
+          <span class="label" data-film="mono" hidden>Rated at</span>
+          <div class="seg" role="group" aria-label="Rated at" data-film="mono" hidden title="Exposure index: 1600 and 3200 are push-developed">
+            <button data-key="rating" data-value="400">400</button>
+            <button data-key="rating" data-value="800">800</button>
+            <button data-key="rating" data-value="1600">1600</button>
+            <button data-key="rating" data-value="3200">3200</button>
+          </div>
+          <span class="label" id="bw-filter-label" data-film="mono" hidden>Filter</span>
+          <div class="dropdown" id="bw-filter" data-film="mono" hidden></div>
+          <span class="label">Exposure</span>
+          <div class="seg" role="group" aria-label="Exposure">
+            <button data-key="exposure" data-value="camera" title="As bright as the raw file, rendered neutrally">As shot</button>
+            <button data-key="exposure" data-value="auto" title="Placed from the scene itself: corrects under- and overexposed files">Auto</button>
+          </div>
+          <label class="label" for="ev">Compensation</label>
+          <div class="dial">
+            <div class="dial-track">
+              <input type="range" id="ev" min="-6" max="6" step="1" value="0">
+              <div class="scale mono" aria-hidden="true"><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span></div>
+            </div>
+            <output class="mono" id="ev-out">0</output>
+          </div>
+          <label class="label" for="sharpness">Sharpness</label>
+          <div class="slider" title="Softer, like an older lens, or crisper. Any sharpening the camera added is taken out first"><input type="range" id="sharpness" min="-100" max="100" step="5" value="0"><output class="mono" id="sharpness-out">0</output></div>
+          <label class="label" for="clarity">Clarity</label>
+          <div class="slider" title="Contrast of textures and details, without changing the light and dark of larger areas"><input type="range" id="clarity" min="-100" max="100" step="5" value="0"><output class="mono" id="clarity-out">0</output></div>
+          <span class="label" data-film="mono" hidden>Paper grade</span>
+          <div class="seg" role="group" aria-label="Paper grade" data-film="mono" hidden title="Softer to harder printing paper">
+            <button data-key="grade" data-value="1">1</button>
+            <button data-key="grade" data-value="2">2</button>
+            <button data-key="grade" data-value="3">3</button>
+            <button data-key="grade" data-value="4">4</button>
+            <button data-key="grade" data-value="5">5</button>
+          </div>
+          <span class="label" data-film="mono" hidden>Selenium</span>
+          <div class="seg" role="group" aria-label="Selenium toner" data-film="mono" hidden>
+            <button data-key="toning" data-value="none">None</button>
+            <button data-key="toning" data-value="light" title="Selenium toner 1+20: deeper blacks, barely any colour change">Light</button>
+            <button data-key="toning" data-value="strong" title="Selenium toner 1+5: shadows and mid-tones turn purplish brown">Strong</button>
+          </div>
+          <span class="label" id="format-label">Format</span>
+          <div class="dropdown" id="format" title="On a bigger frame the grain is finer"></div>
+          <span class="label">Size</span>
+          <div class="seg" role="group" aria-label="Size">
+            <button data-key="size" data-value="draft" id="size-draft">Draft</button>
+            <button data-key="size" data-value="full" id="size-full">Full size</button>
+          </div>
+          <span class="label">Grain</span>
+          <div class="seg" role="group" aria-label="Grain">
+            <button data-key="grain" data-value="true">On</button>
+            <button data-key="grain" data-value="false">Off</button>
+          </div>
+        </div>
+        <p class="note" id="sharpening-note" hidden>The camera sharpened this photograph. The film is exposed without that sharpening, as it would have seen the scene; move Sharpness to the right for a crisper picture.</p>
+        <button class="btn block" id="again" disabled>Develop again</button>
+      </div>
+    </section>
+
+    <section class="sect" id="sect-colour" role="tabpanel" aria-labelledby="tab-colour" hidden>
+      <div class="sect-body">
+        <div class="bands" id="bands" role="group" aria-label="Colour to adjust"></div>
+        <div class="rows trio">
+          <label class="label" for="band-hue">Hue</label>
+          <div class="slider"><input type="range" id="band-hue" min="-100" max="100" value="0" data-param="0"><output class="mono">0</output></div>
+          <label class="label" for="band-sat">Saturation</label>
+          <div class="slider"><input type="range" id="band-sat" min="-100" max="100" value="0" data-param="1"><output class="mono">0</output></div>
+          <label class="label" for="band-light">Light</label>
+          <div class="slider"><input type="range" id="band-light" min="-100" max="100" value="0" data-param="2"><output class="mono">0</output></div>
+        </div>
+        <button class="btn block" id="reset-colour" disabled>Reset colour</button>
+      </div>
+    </section>
+
+    <section class="sect" id="sect-tones" role="tabpanel" aria-labelledby="tab-tones" hidden>
+      <div class="sect-body">
+        <div class="wheels">
+          <div class="wheel" data-wheel="shadows"><canvas width="216" height="216" aria-label="Shadows colour: drag to tint, double-click to clear"></canvas><span class="label">Shadows</span><input type="range" min="-100" max="100" value="0" aria-label="Shadows light"></div>
+          <div class="wheel" data-wheel="midtones"><canvas width="216" height="216" aria-label="Midtones colour: drag to tint, double-click to clear"></canvas><span class="label">Midtones</span><input type="range" min="-100" max="100" value="0" aria-label="Midtones light"></div>
+          <div class="wheel" data-wheel="highlights"><canvas width="216" height="216" aria-label="Highlights colour: drag to tint, double-click to clear"></canvas><span class="label">Highlights</span><input type="range" min="-100" max="100" value="0" aria-label="Highlights light"></div>
+        </div>
+        <button class="btn block" id="reset-tones" disabled>Reset tones</button>
+      </div>
+    </section>
+
+    <section class="sect" id="sect-crop" role="tabpanel" aria-labelledby="tab-crop" hidden>
+      <div class="sect-body">
+        <div class="rows trio">
+          <span class="label" id="aspect-label">Aspect</span>
+          <div class="pair">
+            <div class="dropdown" id="aspect"></div>
+            <button class="tool framed" id="aspect-swap" type="button" title="Portrait or landscape" aria-label="Switch the crop between portrait and landscape"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="11" height="13" rx="1.5"/><path d="M15 4.5h2.5a2 2 0 0 1 2 2V9M17.5 11.5l2-2.5 2 2.5"/></svg></button>
+          </div>
+          <label class="label" for="straighten">Straighten</label>
+          <div class="slider"><input type="range" id="straighten" min="-45" max="45" step="0.1" value="0"><output class="mono" id="straighten-out">0°</output></div>
+          <span class="label">Rotate</span>
+          <div class="pair">
+            <button class="btn with-icon" id="rotate-left" type="button" title="Turn a quarter to the left ([)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.5 4.5 8 8 11.5"/><path d="M4.5 8H14a5.5 5.5 0 0 1 0 11h-3"/></svg><span>Left</span></button>
+            <button class="btn with-icon" id="rotate-right" type="button" title="Turn a quarter to the right (])"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4.5 19.5 8 16 11.5"/><path d="M19.5 8H10a5.5 5.5 0 0 0 0 11h3"/></svg><span>Right</span></button>
+          </div>
+        </div>
+        <p class="note">Drag the corners on the photograph. The crop is made from the developed slide at export, like cropping a scan: it enlarges the grain with the picture.</p>
+        <div class="finish">
+          <button class="btn" id="reset-crop" disabled>Reset crop</button>
+          <button class="btn primary" id="crop-done" title="Back to the picture, cropped (Return)">Done</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<aside class="coffee-note" id="coffee-note" aria-labelledby="coffee-title" aria-live="polite" hidden>
+  <figure class="coffee-mount" aria-hidden="true"><img id="coffee-frame" alt=""></figure>
+  <div class="coffee-text">
+    <h2 id="coffee-title">Five frames developed</h2>
+    <p>Dyeroom is free, and made by one photographer. If it is useful to you, a coffee keeps the lab running and the work going.</p>
+    <div class="coffee-actions">
+      <a class="coffee-go" id="coffee-go" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5h11v4.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.6a2.4 2.4 0 0 1 0 4.8H16"/><path d="M9 3.8c-.6.7-.6 1.5 0 2.2M12.5 3.8c-.6.7-.6 1.5 0 2.2"/></svg>Buy me a coffee</a>
+      <button class="link" id="coffee-later" type="button">Not now</button>
+    </div>
+  </div>
+</aside>
+
+<footer class="statusbar" id="statusbar">
+  <span class="lamp" id="lamp" aria-hidden="true"></span>
+  <span id="status-text">Lab ready</span>
+  <span class="status-bar" id="status-bar" hidden><span id="status-fill"></span></span>
+  <span class="spacer"></span>
+  <span id="queue"></span>
+  <a class="status-link donate-link" id="donate-status" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5h11v4.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.6a2.4 2.4 0 0 1 0 4.8H16"/><path d="M9 3.8c-.6.7-.6 1.5 0 2.2M12.5 3.8c-.6.7-.6 1.5 0 2.2"/></svg>Buy me a coffee</a>
+  <button class="status-tool" id="keys-open" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 9.5h.01M9 9.5h.01M12 9.5h.01M15 9.5h.01M18 9.5h.01M6 12.5h.01M18 12.5h.01M9 12.5h6M8 15h8"/></svg></button>
+  <button class="status-tool" id="about-open" type="button" title="About Dyeroom" aria-label="About Dyeroom"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg></button>
+</footer>
+</div>
+
+<dialog class="dialog sheet" id="about" aria-labelledby="about-title" tabindex="-1">
+  <header class="sheet-head">
+    <svg class="sheet-mark" viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="1" width="18" height="18" rx="3" class="card"></rect><rect x="4" y="6" width="12" height="8" rx="1" class="window"></rect><rect x="6" y="3" width="8" height="1.5" class="print"></rect></svg>
+    <div class="sheet-heading"><h2 id="about-title">Dyeroom</h2><p class="sheet-sub">Developed the long way.</p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <section class="about-part">
+    <h3>How it works</h3>
+    <p>Each photograph is exposed on a simulated film and taken through its chemistry step by step. Sunday 64 is a colour slide film: latent image, first developer, re-exposure, three colour developers, bleach and fix, then the slide on a light box or a projector screen. Monday 400 is a black-and-white negative: developer, stop bath and fixer, then enlarged onto paper.</p>
+  </section>
+  <section class="about-part" id="about-free" hidden>
+    <h3>Free to use</h3>
+    <p>Every film, setting and kind of export is free for everyone. If Dyeroom is useful to you, you can keep it going with a coffee: <a class="donate-link" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5h11v4.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.6a2.4 2.4 0 0 1 0 4.8H16"/><path d="M9 3.8c-.6.7-.6 1.5 0 2.2M12.5 3.8c-.6.7-.6 1.5 0 2.2"/></svg>Buy me a coffee</a>. A donation buys nothing extra; everyone gets the same.</p>
+  </section>
+  <section class="about-part" id="about-privacy" hidden>
+    <h3>Your photographs</h3>
+    <p id="privacy-about"></p>
+  </section>
+  <section class="about-part">
+    <h3>Films and data</h3>
+    <p class="fine">Sunday 64 is modelled on Kodak Kodachrome 64, Monday 400 on Kodak Tri-X 400. Kodak, Kodachrome and Tri-X are trademarks of Eastman Kodak Company. Dyeroom is an independent project and is not affiliated with, sponsored by or endorsed by Kodak.</p>
+    <p class="fine">Film data from Kodak's Kodachrome 64 data sheets (E-88, E-55) and Tri-X data sheet (F-4017); Status A densitometer response after Giorgianni, Madden &amp; Kriss, via the spektrafilm project by Andrea Volpato. Sample raw from raw.pixls.us (CC0).</p>
+  </section>
+  <section class="about-part">
+    <h3>Colourising</h3>
+    <p class="fine">DDColor by Xiaoyang Kang, Tao Yang, Wenqi Ouyang, Peiran Ren, Lingzhi Li and Xuansong Xie (DAMO Academy, Alibaba Group), under the Apache License 2.0. Photographs it colours are marked as edited with generative AI in their metadata, never in the picture. <a href="/licences" target="_blank" rel="noopener">Licences</a></p>
+  </section>
+  <nav class="legal-links" aria-label="Legal"><a href="/terms" target="_blank" rel="noopener">Terms</a><a href="/privacy" target="_blank" rel="noopener">Privacy</a><a href="/refunds" class="refunds-link" target="_blank" rel="noopener">Refunds</a><a class="contact-link" hidden>Contact</a></nav>
+</dialog>
+
+<dialog class="dialog sheet" id="signin" aria-labelledby="signin-title" tabindex="-1">
+  <header class="sheet-head">
+    <div class="sheet-heading"><h2 id="signin-title">Sign in to develop</h2><p class="sheet-sub">Your first <span id="free-count">5</span> photographs are free. No password to make: use your Apple or Google account.</p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <div class="sso" id="providers"></div>
+  <p class="fine sheet-fine">By signing in you agree to the <a href="/terms" target="_blank" rel="noopener">terms</a>; the <a href="/privacy" target="_blank" rel="noopener">privacy notice</a> says what is kept. The sample on the first page develops without signing in.</p>
+</dialog>
+
+<dialog class="dialog sheet wide" id="film-sheet" aria-labelledby="film-title" tabindex="-1">
+  <header class="sheet-head">
+    <div class="sheet-heading"><h2 id="film-title">Buy film</h2><p class="sheet-sub" id="film-note"></p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <div class="plans" id="plans" role="radiogroup" aria-label="Film to buy"></div>
+  <button class="btn primary sheet-cta" id="film-buy" type="button">Buy</button>
+  <p class="fine sheet-fine" id="film-fine"></p>
+</dialog>
+
+<dialog class="dialog sheet" id="preset-sheet" aria-labelledby="preset-title" tabindex="-1">
+  <header class="sheet-head">
+    <div class="sheet-heading"><h2 id="preset-title">Save preset</h2><p class="sheet-sub">The development settings and this frame's Colour and Tones, to use on other photographs.</p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <form method="dialog" class="sheet-form">
+    <label class="field-label" for="preset-name">Name</label>
+    <input type="text" class="text" id="preset-name" maxlength="60" placeholder="For example Street at night" autocomplete="off" required>
+    <button class="btn primary sheet-cta" value="save">Save preset</button>
+    <p class="fine sheet-fine">A preset with the same name is replaced.</p>
+  </form>
+</dialog>
+
+<dialog class="dialog sheet" id="account-sheet" aria-labelledby="account-title" tabindex="-1">
+  <header class="sheet-head">
+    <span class="monogram" id="account-initial" aria-hidden="true"></span>
+    <div class="sheet-heading"><h2 id="account-title">Account</h2><p class="sheet-sub" id="account-who"></p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">Frames left</span>
+      <b class="stat-value" id="account-frames"></b>
+      <span class="stat-note">One per photograph</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Plan</span>
+      <b class="stat-value" id="account-plan"></b>
+      <span class="meter" id="account-meter" hidden><span id="account-meter-fill"></span></span>
+      <span class="stat-note" id="account-plan-note"></span>
+    </div>
+  </div>
+  <div class="sheet-list">
+    <button class="sheet-row" id="account-buy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.6"/><rect x="6.5" y="9.5" width="11" height="5" rx="0.6"/><path d="M6.5 7.2h.01M9.5 7.2h.01M12.5 7.2h.01M15.5 7.2h.01M18.5 7.2h.01M6.5 16.8h.01M9.5 16.8h.01M12.5 16.8h.01M15.5 16.8h.01M18.5 16.8h.01"/></svg><span>Buy film</span><svg class="end" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7l5 5-5 5"/></svg></button>
+    <button class="sheet-row" id="account-manage" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3zM9 8.5h6M9 12h6M9 15.5h3.5"/></svg><span id="account-manage-label">Plan and receipts</span><svg class="end" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h8.5V15M17.5 6.5 7 17"/></svg></button>
+    <button class="sheet-row" id="account-out" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5H6.5a1.5 1.5 0 0 0-1.5 1.5v12a1.5 1.5 0 0 0 1.5 1.5H14M10.5 12H20M16.5 8.5 20 12l-3.5 3.5"/></svg><span>Sign out</span></button>
+    <div class="sheet-sep"></div>
+    <button class="sheet-row danger" id="account-delete" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l1 12.2h9l1-12.2"/></svg><span>Delete account</span></button>
+  </div>
+</dialog>
+
+<dialog class="dialog sheet" id="keys-sheet" aria-labelledby="keys-title" tabindex="-1">
+  <header class="sheet-head">
+    <div class="sheet-heading"><h2 id="keys-title">Keyboard shortcuts</h2><p class="sheet-sub">For the frame in view. Escape leaves full screen.</p></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+  </header>
+  <section class="about-part">
+    <h3>Frames</h3>
+    <dl class="keys">
+      <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd>Previous and next frame</dd>
+      <dt><kbd>Delete</kbd></dt><dd>Remove the frame from the lab</dd>
+      <dt><kbd>O</kbd></dt><dd>Add photographs</dd>
+    </dl>
+  </section>
+  <section class="about-part">
+    <h3>Compare</h3>
+    <dl class="keys">
+      <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>Split, Raw, Previous, Slide</dd>
+      <dt><kbd>\</kbd></dt><dd>Switch between the raw and the result</dd>
+      <dt><kbd>Space</kbd></dt><dd>Hold to see the raw</dd>
+      <dt><kbd>C</kbd></dt><dd>Next comparison</dd>
+      <dt><kbd>F</kbd></dt><dd>Full screen</dd>
+    </dl>
+  </section>
+  <section class="about-part">
+    <h3>Developing</h3>
+    <dl class="keys">
+      <dt><kbd>D</kbd></dt><dd>Develop again</dd>
+      <dt><kbd class="mod">⌘</kbd><kbd>Z</kbd></dt><dd>Undo a change to Colour, Tones or Crop</dd>
+      <dt><kbd>Shift</kbd><kbd class="mod">⌘</kbd><kbd>Z</kbd></dt><dd>Redo</dd>
+      <dt><kbd>R</kbd></dt><dd>Crop and straighten; again, or Return, to finish</dd>
+      <dt><kbd>[</kbd><kbd>]</kbd></dt><dd>Turn a quarter left or right while cropping</dd>
+      <dt><kbd>E</kbd></dt><dd>Export JPEG</dd>
+      <dt><kbd>Shift</kbd><kbd>E</kbd></dt><dd>Export 16-bit TIFF</dd>
+      <dt><kbd>?</kbd></dt><dd>These shortcuts</dd>
+    </dl>
+  </section>
+</dialog>
+
+<div class="veil" id="veil" aria-hidden="true"><p>Drop to develop</p></div>
+<script src="/static/grade.js"></script>
+<script src="/static/lab.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

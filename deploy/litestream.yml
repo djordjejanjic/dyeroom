@@ -1,0 +1,18 @@
+# Litestream: a continuous copy of the accounts database, off the server.
+# accounts.db is the only thing Dyeroom keeps (accounts, frames bought, plans, presets and the
+# fingerprint key); photographs are never in it. Every change reaches the bucket within seconds,
+# and any moment of the last 30 days can be restored (DEVELOPING.md, "Backups").
+#
+# Any S3-compatible storage works: Backblaze B2, Cloudflare R2, Hetzner Object Storage, AWS S3.
+# Set in docker-compose.yml (service "backup"): LITESTREAM_BUCKET, LITESTREAM_ENDPOINT,
+# LITESTREAM_REGION, LITESTREAM_ACCESS_KEY_ID, LITESTREAM_SECRET_ACCESS_KEY.
+dbs:
+  - path: /data/accounts.db
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: dyeroom/accounts.db
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: ${LITESTREAM_REGION}
+        retention: 720h          # 30 days of history
+        snapshot-interval: 24h

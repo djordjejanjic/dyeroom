@@ -1,0 +1,22 @@
+# Environments and builds
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.DS_Store
+.playwright-mcp/
+
+# Never in the repository: photographs, private notes, the server, secrets
+out/
+web-data/
+docs/
+deploy/deploy.sh
+models/
+.env
+*.env
+
+# Large or machine-made files: the colourising model downloads separately, the Core Image
+# decoder is compiled on each Mac. The rest of data/cache (lattices, the fitted film) is kept.
+dyeroom/data/cache/*.onnx
+dyeroom/data/cache/macraw

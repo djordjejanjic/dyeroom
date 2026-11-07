@@ -1,0 +1,96 @@
+services:
+  dyeroom:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"        # only the reverse proxy on this server reaches it (it adds HTTPS)
+    volumes:
+      - dyeroom-data:/data           # accounts only: photographs are never kept
+      - dyeroom-work:/work           # photographs, only while they are worked on; emptied at every start
+      - ./models:/models:ro          # the colourising model (270 MB), copied here once, not built into the image
+    # On a server with memory to spare (64 GB), keep photographs in memory instead, so they
+    # never touch a disk: remove the dyeroom-work line above and use
+    # tmpfs:
+    #   - /work:size=8g
+    # mem_limit: 14g                 # set below the server's memory, so a huge raw fails alone, not the server
+    environment:
+      DYEROOM_WORKERS: "2"         # photos developed at once (~3 GB each for drafts; full size, 6-7 GB, one at a time)
+      DYEROOM_FULL: "1"            # set to 0 on small servers to allow drafts only
+      DYEROOM_IDLE_MINUTES: "30"     # deleted this long after the page stops using them (at once when it closes)
+      DYEROOM_KEEP_HOURS: "3"        # and at the latest this long after upload
+      DYEROOM_TRUSTED_PROXIES: "*"   # the port is open to this server only (above), so its proxy is believed
+      DYEROOM_CLIENT_IP_HEADER: "cf-connecting-ip"  # only Cloudflare's tunnel reaches the app, so its header is believed
+      DYEROOM_USER: "${DYEROOM_USER:-}"          # both set in .env: the whole site asks for a password
+      DYEROOM_PASSWORD: "${DYEROOM_PASSWORD:-}"  # (before launch); remove both from .env at launch
+      DYEROOM_COLOURISE_MODEL: "/models/ddcolor_paper_tiny.onnx"
+      DYEROOM_PUBLIC_URL: "https://dyeroom.app"   # canonical addresses, sitemap, link previews
+      # Free, with a link for donations (DEVELOPING.md, "Free, with donations"):
+      DYEROOM_DONATE_URL: "https://buymeacoffee.com/geoyanj"
+      # Accounts and payments instead (see DEVELOPING.md, "Accounts and payments"):
+      # DYEROOM_ACCOUNTS: "1"
+      # DYEROOM_FREE_FRAMES: "5"
+      # DYEROOM_GOOGLE_CLIENT_ID: ""
+      # DYEROOM_GOOGLE_CLIENT_SECRET: ""
+      # DYEROOM_APPLE_CLIENT_ID: ""
+      # DYEROOM_APPLE_TEAM_ID: ""
+      # DYEROOM_APPLE_KEY_ID: ""
+      # DYEROOM_APPLE_PRIVATE_KEY_FILE: "/run/secrets/apple-signin.p8"
+      # DYEROOM_BILLING: "paddle"
+      # DYEROOM_PADDLE_ENV: "sandbox"
+      # DYEROOM_PADDLE_CLIENT_TOKEN: ""
+      # DYEROOM_PADDLE_API_KEY: ""
+      # DYEROOM_PADDLE_WEBHOOK_SECRET: ""
+      # DYEROOM_PADDLE_PRICE_ROLL: ""
+      # DYEROOM_PADDLE_PRICE_MONTHLY: ""
+      # DYEROOM_PADDLE_PRICE_YEARLY: ""
+      # The seller, for the terms, privacy notice and refund policy (DEVELOPING.md, "Legal pages"):
+      DYEROOM_LEGAL_NAME: "Djordje Janjic"
+      DYEROOM_LEGAL_ADDRESS: "Belgrade, Serbia"
+      DYEROOM_CONTACT_EMAIL: "hello@dyeroom.app"
+      DYEROOM_LEGAL_COUNTRY: "Serbia"   # whose law governs the terms
+      DYEROOM_HOSTING: "by Hetzner Online GmbH in Germany"
+      DYEROOM_NETWORK: "Cloudflare, Inc."  # the tunnel in front of the server, named in the privacy notice
+      # DYEROOM_BACKUP_HOSTING: ""     # e.g. "with Backblaze in the Netherlands"
+      # DYEROOM_REFUND_DAYS: "30"      # 14 to 90
+      # Running it (DEVELOPING.md, "Running it"):
+      DYEROOM_ADMIN_PASSWORD: "${DYEROOM_ADMIN_PASSWORD:-}"  # /admin, user "admin": set it in .env on the server, never here
+      # DYEROOM_ADMIN_EMAILS: ""       # who may open /admin (with accounts)
+      DYEROOM_ALERT_URL: "${DYEROOM_ALERT_URL:-}"  # https://ntfy.sh/<a long secret topic>, in .env
+      DYEROOM_UNLIMITED: "${DYEROOM_UNLIMITED:-}"  # addresses spared the fair-use limits (the owner's), in .env
+      DYEROOM_SERVER_EUR_MONTH: "10.49"  # Hetzner CAX21, for the cost per frame on /admin
+    logging:
+      options: { max-size: "10m", max-file: "5" }
+    restart: unless-stopped
+
+  # Cloudflare Tunnel: carries https://dyeroom.app to the app with no port open on the server.
+  # Its token (Cloudflare, Zero Trust, Networks, Tunnels) goes in .env as CLOUDFLARE_TUNNEL_TOKEN,
+  # with COMPOSE_PROFILES=tunnel so that "docker compose up -d" starts it.
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.1
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:-}"
+    profiles: ["tunnel"]
+    depends_on: [dyeroom]
+    restart: unless-stopped
+
+  # The accounts database, copied off the server as it changes (deploy/litestream.yml).
+  # Start it with:  docker compose --profile backup up -d
+  backup:
+    image: litestream/litestream:0.3.13
+    profiles: ["backup"]
+    command: replicate
+    volumes:
+      - dyeroom-data:/data
+      - ./deploy/litestream.yml:/etc/litestream.yml:ro
+    environment:
+      LITESTREAM_BUCKET: ""
+      LITESTREAM_ENDPOINT: ""        # e.g. https://s3.eu-central-003.backblazeb2.com
+      LITESTREAM_REGION: ""          # e.g. eu-central-003
+      LITESTREAM_ACCESS_KEY_ID: ""
+      LITESTREAM_SECRET_ACCESS_KEY: ""
+    depends_on: [dyeroom]
+    restart: unless-stopped
+
+volumes:
+  dyeroom-data:
+  dyeroom-work:
