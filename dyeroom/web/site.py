@@ -88,7 +88,8 @@ def _nav():
 def _footer(accounts, donate):
     e = html.escape
     links = ['<a href="/app">Open Dyeroom</a>', '<a href="/how-it-works">How it works</a>', '<a href="/guides">Guides</a>',
-             '<a href="/about">About</a>', '<a href="/terms">Terms</a>', '<a href="/privacy">Privacy</a>']
+             '<a href="/about">About</a>', '<a href="/terms">Terms</a>', '<a href="/privacy">Privacy</a>',
+             '<a href="https://github.com/djordjejanjic/dyeroom" rel="noopener">Source code</a>']  # free software (AGPL): its source, one click away
     if accounts:
         links.append('<a href="/refunds">Refunds</a>')
     if donate and not accounts:

@@ -2562,7 +2562,7 @@ async function start() {
       $("about-free").hidden = false;
     }
     if (options.local) {  // the lab on this computer: no service terms, and nothing leaves it
-      document.querySelectorAll(".legal-links a").forEach((a) => { a.hidden = true; });
+      document.querySelectorAll(".legal-links a:not(.source-link)").forEach((a) => { a.hidden = true; });
       $("fact-privacy").querySelector("b").textContent = "On this computer";
       $("fact-privacy").querySelector("b + span").textContent = "Nothing is uploaded";
       setInterval(() => fetch("/api/here").catch(() => {}), 60000);  // the lab runs while a window is open
