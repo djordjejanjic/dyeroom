@@ -586,6 +586,13 @@ button.feature:hover .feature-text span, a.feature:hover .feature-text span { co
 button.feature:hover svg, a.feature:hover svg { stroke: var(--red); }
 /* Terms, privacy, refunds and contact: quiet links at the foot */
 .legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 32px; font-size: 12px; }
+/* Dyeroom on your own computer: a short offer under the facts (not shown in the desktop app itself) */
+.local-offer { max-width: 31rem; margin: 30px auto 0; text-align: center; }
+.local-offer p { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--secondary); }
+.local-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; font-size: 13px; }
+.local-actions .btn { text-decoration: none; }
+.local-source { color: var(--secondary); text-underline-offset: 3px; }
+.local-source:hover { color: var(--ink); }
 .legal-links a, .legal-links button { padding: 0; font-size: inherit; color: var(--tertiary); text-decoration: none; background: none;
                                       border: 0; cursor: pointer; }
 .legal-links a:hover, .legal-links button:hover { color: var(--ink); }

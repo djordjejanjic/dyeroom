@@ -77,6 +77,7 @@ def _head(title, description, path, base, image, image_alt, jsonld, robots="inde
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="manifest" href="/static/site.webmanifest" crossorigin="use-credentials">
 <link rel="stylesheet" href="{_stamp('site.css')}">
+<script src="{_stamp('site.js')}" defer></script>
 {data}"""
 
 
@@ -88,7 +89,8 @@ def _nav():
 def _footer(accounts, donate):
     e = html.escape
     links = ['<a href="/app">Open Dyeroom</a>', '<a href="/how-it-works">How it works</a>', '<a href="/guides">Guides</a>',
-             '<a href="/about">About</a>', '<a href="/terms">Terms</a>', '<a href="/privacy">Privacy</a>',
+             '<a href="/about">About</a>', '<a href="/run-on-your-computer">On your computer</a>',
+             '<a href="/terms">Terms</a>', '<a href="/privacy">Privacy</a>',
              '<a href="https://github.com/djordjejanjic/dyeroom" rel="noopener">Source code</a>']  # free software (AGPL): its source, one click away
     if accounts:
         links.append('<a href="/refunds">Refunds</a>')
@@ -157,6 +159,12 @@ def home(base, accounts, donate, privacy, max_mb):
 <div class="actions"><a class="btn primary" href="/app">Start developing</a><a class="btn" href="/app?sample=1">Try a sample</a></div>
 <div class="facts">{free}<div class="fact">{_icon("lock")}<span><b>Nothing is stored</b><span>Deleted when you leave</span></span></div><div class="fact">{_icon("camera")}<span><b>Raw or phone photos</b><span>Cameras and phones, up to {max_mb} MB</span></span></div></div>
 </div>
+</section>
+
+<section class="part">
+<h2>On your own computer</h2>
+<div><p>Dyeroom is free and open source. Installed on your own computer with one line, on macOS, Windows or Linux, it develops with all of that computer's power, and your photographs never leave it.</p>
+<p class="part-actions"><a class="btn" href="/run-on-your-computer">Run it on your computer</a><a href="https://github.com/djordjejanjic/dyeroom" rel="noopener">Source code on GitHub</a></p></div>
 </section>
 
 <section class="part">

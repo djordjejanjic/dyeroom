@@ -1589,6 +1589,11 @@ def how_it_works(request: Request):
     return _content(request, "/how-it-works")
 
 
+@app.api_route("/run-on-your-computer", methods=["GET", "HEAD"])
+def run_locally_page(request: Request):
+    return _content(request, "/run-on-your-computer")
+
+
 @app.api_route("/about", methods=["GET", "HEAD"])
 def about(request: Request):
     return _content(request, "/about")

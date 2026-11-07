@@ -2,7 +2,8 @@
 
 Each file starts with front matter between --- lines (slug, title, description, h1, subline,
 updated, author, breadcrumb, image, and for /about same_as), then the body in a small part of
-Markdown: ## headings, paragraphs, "- " and "1. " lists, | tables, **bold**, *italic*, [links](...)
+Markdown: ## headings, paragraphs, "- " and "1. " lists, | tables, **bold**, *italic*, `code`,
+[links](...), code blocks between ``` lines (shown with a Copy button where the browser can copy),
 and figures:
 
     [figure]                       or [figure portrait], a small square beside the opening
@@ -28,6 +29,7 @@ OTHER_PAGES = {"/", "/app", "/terms", "/privacy", "/licences", "/films", "/guide
 
 LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 BOLD = re.compile(r"\*\*(.+?)\*\*")
+CODE = re.compile(r"`([^`]+)`")
 ITALIC = re.compile(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])")
 
 
@@ -96,15 +98,19 @@ def _known(url, pages):
 
 
 def inline(text, pages):
-    """One line of Markdown to HTML: links, then bold and italic, everything else escaped."""
-    links = []
+    """One line of Markdown to HTML: code and links, then bold and italic, everything else escaped."""
+    links, codes = [], []
 
     def keep(m):
         words, url = m.group(1), m.group(2)
         links.append((words, url))
         return f"\x00{len(links) - 1}\x00"
 
-    text = html.escape(LINK.sub(keep, text), quote=False)
+    def keep_code(m):
+        codes.append(m.group(1))
+        return f"\x01{len(codes) - 1}\x01"
+
+    text = html.escape(LINK.sub(keep, CODE.sub(keep_code, text)), quote=False)
     text = ITALIC.sub(r"<em>\1</em>", BOLD.sub(r"<strong>\1</strong>", text))
 
     def link(m):
@@ -114,7 +120,8 @@ def inline(text, pages):
             return f'<a href="{html.escape(url)}">{words}</a>' if _known(url, pages) else words
         return f'<a href="{html.escape(url)}" rel="noopener">{words}</a>'
 
-    return re.sub(r"\x00(\d+)\x00", link, text)
+    text = re.sub(r"\x00(\d+)\x00", link, text)
+    return re.sub(r"\x01(\d+)\x01", lambda m: f"<code>{html.escape(codes[int(m.group(1))])}</code>", text)
 
 
 def _figure(kind, lines, pages):
@@ -171,6 +178,13 @@ def render(page, pages):
             flush()
             words = line[3:].strip()
             out.append(f'<h2 id="{slugify(words)}">{inline(words, pages)}</h2>')
+        elif line.startswith("```"):
+            flush()
+            j = lines.index("```", i + 1)
+            code = html.escape("\n".join(lines[i + 1:j]))
+            out.append(f'<div class="code"><pre><code>{code}</code></pre>'
+                       '<button type="button" class="copy" hidden>Copy</button></div>')
+            i = j
         elif line.startswith("[figure"):
             flush()
             kind = line.strip()[7:-1].strip()

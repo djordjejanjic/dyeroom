@@ -2595,6 +2595,7 @@ async function start() {
       document.querySelectorAll("#fact-free, .donate-link").forEach((a) => { a.href = options.donate; a.hidden = false; });
       $("about-free").hidden = false;
     }
+    $("local-offer").hidden = Boolean(options.local);  // already on your own computer
     if (options.local) {  // the lab on this computer: no service terms, and nothing leaves it
       document.querySelectorAll(".legal-links a:not(.source-link)").forEach((a) => { a.hidden = true; });
       $("fact-privacy").querySelector("b").textContent = "On this computer";
