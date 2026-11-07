@@ -612,6 +612,21 @@ def _stop_when_unused():
 
 
 _update = None  # a newer version on PyPI, once found
+_colourise_fetch = {"state": "idle"}  # local mode: the colourising model, fetched when the page asks
+
+
+def _fetch_colourise_model():
+    def progress(done, total):
+        _colourise_fetch.update(done=done, total=total)
+    try:
+        model = local.fetch_colourise_model(progress)
+    except (OSError, ValueError) as exc:
+        _colourise_fetch.update(state="failed", error=str(exc) if isinstance(exc, ValueError)
+                                else "The model could not be fetched: is this computer online?")
+        return
+    colourise.MODEL = model
+    os.environ["DYEROOM_COLOURISE_MODEL"] = str(model)  # and for the developer's own processes
+    _colourise_fetch.update(state="done")
 
 
 def _check_for_update():
@@ -663,6 +678,7 @@ def options():
             "formats": list(FORMATS),
             "ratings": list(mono.RATINGS), "development_minutes": mono.RATINGS,
             "colourise": colourise.available(),
+            "colourise_download": LOCAL and not colourise.available() and colourise.runtime(),
             "privacy": {"in_memory": IN_MEMORY, "idle_minutes": max(1, round(IDLE_SECONDS / 60)),
                         "keep_hours": round(KEEP_SECONDS / 3600, 1)}, "grades": list(mono.GRADES), "bw_filters": list(mono.FILTERS),
             "providers": [{"id": i, "label": label} for i, label in sso.enabled()] if ACCOUNTS else [],
@@ -1501,6 +1517,26 @@ def install_script(request: Request):
     Windows:  powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex" """
     script = (Path(__file__).parent / request.url.path.lstrip("/")).read_text(encoding="utf-8")
     return Response(script, media_type="text/plain; charset=utf-8", headers={"Cache-Control": "public, max-age=300"})
+
+
+@app.get("/api/colourise-model")
+def colourise_model_status():
+    """Local mode: how far fetching the colourising model has got."""
+    if not LOCAL:
+        raise HTTPException(404)
+    return {**_colourise_fetch, "available": colourise.available()}
+
+
+@app.post("/api/colourise-model")
+def colourise_model_fetch():
+    """Local mode: fetch the colourising model (270 MB, once) in the background."""
+    if not LOCAL:
+        raise HTTPException(404)
+    if _colourise_fetch["state"] != "fetching" and not colourise.available():
+        _colourise_fetch.clear()
+        _colourise_fetch.update(state="fetching", done=0, total=0)
+        threading.Thread(target=_fetch_colourise_model, daemon=True).start()
+    return colourise_model_status()
 
 
 @app.get("/api/here")

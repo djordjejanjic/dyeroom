@@ -112,8 +112,10 @@ the installer on all three, develops the sample through the lab and opens it fro
 * **Updates:** once a day the lab asks PyPI for the latest version (`version.json` in the
   app-data folder; `DYEROOM_UPDATE_CHECK=0` stops it), the one thing it sends anywhere, and the
   status bar and the `dyeroom` command say when a newer one is out.
-* **Colourising:** the model is not in the package; `dyeroom colourise-model` fetches it from
-  the GitHub release `colourise-model-1` and checks its SHA-256.
+* **Colourising:** the model is not in the package; `dyeroom colourise-model`, or the page's
+  "Get colourising" button where a black-and-white photograph is turned away
+  (`POST /api/colourise-model`, progress from `GET`), fetches it from the GitHub release
+  `colourise-model-1` into the app-data folder and checks its SHA-256; it is used at once.
 * **Releasing:** a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds the wheel and
   publishes it to PyPI through trusted publishing (no token stored anywhere).
 

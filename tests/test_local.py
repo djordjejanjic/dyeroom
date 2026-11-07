@@ -34,6 +34,32 @@ class Versions(unittest.TestCase):
         self.assertFalse(local.newer(None, "0.5.0"))
 
 
+class ColourisingModel(unittest.TestCase):
+    def fetch(self, body, sha):
+        reply = mock.MagicMock()
+        reply.__enter__.return_value.headers = {"content-length": str(len(body))}
+        reply.__enter__.return_value.read.side_effect = [body[:3], body[3:], b""]
+        heard = []
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(local, "folders", return_value=(Path(tmp), Path(tmp))), \
+                mock.patch.object(local, "MODEL_SHA256", sha), \
+                mock.patch.object(local.urllib.request, "urlopen", return_value=reply):
+            try:
+                model = local.fetch_colourise_model(lambda done, total: heard.append((done, total)))
+                return model.read_bytes(), heard, sorted(p.name for p in Path(tmp).iterdir())
+            except ValueError:
+                return None, heard, sorted(p.name for p in Path(tmp).iterdir())
+
+    def test_kept_only_when_it_is_the_model(self):
+        import hashlib
+        body = b"weights!"
+        kept, heard, files = self.fetch(body, hashlib.sha256(body).hexdigest())
+        self.assertEqual((kept, files), (body, [local.MODEL_NAME]))
+        self.assertEqual(heard[-1], (len(body), len(body)))
+        kept, _, files = self.fetch(body, "0" * 64)
+        self.assertEqual((kept, files), (None, []))  # the wrong file is not kept, nor its part
+
+
 class Starting(unittest.TestCase):
     def test_a_window_at_once(self):
         """The starting page opens before the lab answers, and knows where the lab will be."""

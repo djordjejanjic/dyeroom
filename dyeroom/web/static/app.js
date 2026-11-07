@@ -201,6 +201,7 @@ function bindControls() {
   $("account").addEventListener("click", openAccount);
   $("fact-film").addEventListener("click", () => (me.signed_in ? openFilm(false) : openSignIn()));
   $("working-buy").addEventListener("click", () => openFilm(true));
+  $("get-colour").addEventListener("click", getColourising);
   // A black-and-white original turned away by the colour film: print it, or colourise it.
   $("as-print").addEventListener("click", () => {
     if (!current) return;
@@ -750,6 +751,7 @@ function renderViewer() {
   const turnedAway = hasItem && current.state === "failed" && current.errorCode === "monochrome";
   $("working-mono").hidden = !turnedAway;
   $("as-colour").hidden = !(options && options.colourise);
+  $("get-colour").hidden = !(options && options.colourise_download && !options.colourise);
 
   const doneMono = shown && isMono(current.doneSettings);
   document.querySelector('[data-compare="slide"]').textContent = doneMono ? "Print" : "Slide";
@@ -1961,6 +1963,37 @@ function bindFilm() {
       menuItem(ICON.all, "Roll as JPEG", () => exportRoll("jpg"), close, "", "Every developed frame in one ZIP"),
       menuItem(ICON.all, "Roll as TIFF", () => exportRoll("tif"), close, "", "16-bit, every frame in one ZIP")];
   });
+}
+
+// --- colourising, on your own computer -----------------------------------------------------
+// The model is not part of the install: the page fetches it once, when it is first wanted.
+
+const GET_COLOUR = "Get colourising (270 MB, once)";
+
+async function getColourising() {
+  const button = $("get-colour");
+  button.disabled = true;
+  try {
+    let status = await (await fetch("/api/colourise-model", { method: "POST" })).json();
+    while (status.state === "fetching") {
+      button.textContent = status.total ? `Getting the model, ${Math.floor((100 * status.done) / status.total)} %`
+        : "Getting the model";
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      status = await (await fetch("/api/colourise-model")).json();
+    }
+    if (status.available) {
+      options.colourise = true;
+      options.colourise_download = false;
+      setNotice("Colourising is ready");
+    } else {
+      setNotice(status.error || "The model could not be fetched");
+    }
+  } catch (_) {
+    setNotice("The model could not be fetched");
+  }
+  button.disabled = false;
+  button.textContent = GET_COLOUR;
+  render();
 }
 
 // --- photographs are not kept ---------------------------------------------------------------

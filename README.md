@@ -53,7 +53,8 @@ when you close its window. Nothing needs administrator rights or a signed instal
 ```sh
 dyeroom                      # open the lab (in an app window in Chrome, Edge or Brave if you have one)
 dyeroom stop                 # stop it now
-dyeroom colourise-model      # fetch the model that colourises black-and-white originals (270 MB)
+dyeroom colourise-model      # the model that colourises black-and-white originals (270 MB, once;
+                             #   or from the app, the first time you colourise)
 dyeroom PHOTO.RAF            # or develop from the command line: a draft, into ./out
 dyeroom --help
 uv tool upgrade dyeroom      # update

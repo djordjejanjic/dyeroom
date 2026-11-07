@@ -98,7 +98,9 @@ def settings(port, key):
            "DYEROOM_DATA": str(data), "DYEROOM_WORK": str(cache / "work"), "DYEROOM_WORKERS": str(workers()),
            "DYEROOM_KEEP_HOURS": "24", "DYEROOM_IDLE_MINUTES": "240", "DYEROOM_UNLIMITED": "127.0.0.1,::1",
            "DYEROOM_ACCOUNTS": "0", "DYEROOM_DONATE_URL": DONATE}
-    if (data / MODEL_NAME).is_file():
+    # The colourising model lives in the app-data folder, fetched there when asked for (the
+    # command or the page); a copy beside the package (working from source) is used if there is one.
+    if (data / MODEL_NAME).is_file() or not (Path(__file__).parent / "data" / "cache" / MODEL_NAME).is_file():
         out["DYEROOM_COLOURISE_MODEL"] = str(data / MODEL_NAME)
     return out
 
@@ -404,30 +406,47 @@ def _windows_shortcut(home):
     return link
 
 
-def colourise_model():
-    """Fetch DDColor's weights (Apache-2.0) for colourising black-and-white originals, checked."""
-    data = folders()[0]
-    target = data / MODEL_NAME
+def fetch_colourise_model(progress=None):
+    """Fetch DDColor's weights (Apache-2.0), for colourising black-and-white originals, into the
+    app-data folder, checked against their SHA-256; returns where they are. progress(done, total)
+    hears how far it is. OSError or ValueError if it could not be done (nothing is then kept)."""
+    target = folders()[0] / MODEL_NAME
     if target.is_file():
-        print(f"The colourising model is already there: {target}")
-        return
-    data.mkdir(parents=True, exist_ok=True)
+        return target
+    target.parent.mkdir(parents=True, exist_ok=True)
     part, digest = target.with_suffix(".part"), hashlib.sha256()
-    print("Fetching the colourising model (DDColor, 270 MB, once)...")
     with urllib.request.urlopen(MODEL_URL, timeout=60) as reply, open(part, "wb") as out:
         total, done = int(reply.headers.get("content-length") or 0), 0
         while chunk := reply.read(1 << 20):
             out.write(chunk)
             digest.update(chunk)
             done += len(chunk)
-            if total:
-                print(f"\r{100 * done // total:3d} %", end="", flush=True)
-    print()
+            if progress:
+                progress(done, total)
     if digest.hexdigest() != MODEL_SHA256:
         part.unlink()
-        raise SystemExit("The download did not match the model it should be; nothing was kept.")
+        raise ValueError("The download did not match the model it should be; nothing was kept.")
     part.replace(target)
-    print("Done. Colourising is there the next time the lab starts (dyeroom stop, then dyeroom).")
+    return target
+
+
+def colourise_model():
+    """The command: fetch the colourising model, saying how far it is."""
+    if (folders()[0] / MODEL_NAME).is_file():
+        print(f"The colourising model is already there: {folders()[0] / MODEL_NAME}")
+        return
+    print("Fetching the colourising model (DDColor, 270 MB, once)...")
+    shown = []
+
+    def progress(done, total):
+        if total and (percent := 100 * done // total) not in shown:
+            shown.append(percent)
+            print(f"\r{percent:3d} %", end="", flush=True)
+    try:
+        fetch_colourise_model(progress)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"\n{exc}")
+    print("\nDone. Colourising is there now (reload Dyeroom's window if it is open).")
 
 
 def main(argv):

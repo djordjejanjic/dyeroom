@@ -28,14 +28,17 @@ SIZE = 512  # the model's input, width and height
 NAME = "DDColor"
 
 
-def available():
-    if not MODEL.is_file():
-        return False
+def runtime():
+    """Whether ONNX Runtime, which runs the model, is installed."""
     try:
         import onnxruntime  # noqa: F401
     except ImportError:
         return False
     return True
+
+
+def available():
+    return MODEL.is_file() and runtime()
 
 
 @lru_cache(maxsize=1)

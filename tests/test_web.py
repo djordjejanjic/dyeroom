@@ -312,6 +312,35 @@ class Local(unittest.TestCase):
             web._update = None
             (web.DATA / "version.json").unlink(missing_ok=True)
 
+    def test_colourising_fetched_from_the_page(self):
+        key = {web.LOCAL_COOKIE: "k" * 32}
+        with tempfile.TemporaryDirectory() as tmp:
+            model = Path(tmp) / "model.onnx"
+            fetched = lambda progress: (progress(1, 1), model.write_bytes(b"x"), model)[-1]
+            old_model, old_env = web.colourise.MODEL, os.environ.get("DYEROOM_COLOURISE_MODEL")
+            web.colourise.MODEL = Path(tmp) / "missing.onnx"
+            try:
+                self.assertTrue(self.here.get("/api/options", cookies=key).json()["colourise_download"])
+                with mock.patch.object(web.local, "fetch_colourise_model", side_effect=fetched):
+                    self.here.post("/api/colourise-model", cookies=key)
+                    for _ in range(100):
+                        status = self.here.get("/api/colourise-model", cookies=key).json()
+                        if status["state"] != "fetching":
+                            break
+                        time.sleep(0.02)
+                self.assertEqual((status["state"], status["available"]), ("done", True))
+                self.assertFalse(self.here.get("/api/options", cookies=key).json()["colourise_download"])
+            finally:
+                web.colourise.MODEL = old_model
+                web._colourise_fetch.clear()
+                web._colourise_fetch["state"] = "idle"
+                if old_env is None:
+                    os.environ.pop("DYEROOM_COLOURISE_MODEL", None)
+                else:
+                    os.environ["DYEROOM_COLOURISE_MODEL"] = old_env
+        web.LOCAL = False
+        self.assertEqual(client.post("/api/colourise-model").status_code, 404)  # only on your own computer
+
     def test_installer_is_served(self):
         web.LOCAL = False
         script = client.get("/install.sh")
