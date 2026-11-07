@@ -10,6 +10,7 @@ import os
 import tempfile
 import time
 import unittest
+from unittest import mock
 import zipfile
 from pathlib import Path
 
@@ -276,6 +277,40 @@ class Local(unittest.TestCase):
     def test_home_is_the_lab(self):
         home = self.here.get("/", cookies={web.LOCAL_COOKIE: "k" * 32}, follow_redirects=False)
         self.assertEqual((home.status_code, home.headers["location"]), (303, "/app"))
+
+    def test_full_size_must_fit_this_computer(self):
+        """A photograph too large to develop at full size in this computer's memory is refused, with why."""
+        buf = io.BytesIO()
+        Image.new("RGB", (300, 200), (120, 110, 100)).save(buf, "JPEG")
+        upload_id = self.here.post("/api/uploads", files={"file": ("big.jpg", buf.getvalue(), "image/jpeg")},
+                                   cookies={web.LOCAL_COOKIE: "k" * 32}).json()["upload_id"]
+        for _ in range(200):
+            if web._previews.get(upload_id) != "making":
+                break
+            time.sleep(0.05)
+        (web.PREVIEWS / upload_id / "size.json").write_text('{"width": 9504, "height": 6336}', encoding="utf-8")  # 60 MP
+        with mock.patch.object(web.local, "memory_gb", return_value=12.0):  # 60 MP needs about 10.5 GB
+            refused = self.here.post("/api/jobs", json={"upload_id": upload_id, "size": "full"},
+                                     cookies={web.LOCAL_COOKIE: "k" * 32})
+        self.assertEqual(refused.status_code, 422)
+        self.assertIn("60 megapixels", refused.json()["detail"])
+        self.assertIn("draft", refused.json()["detail"])
+        with mock.patch.object(web.local, "memory_gb", return_value=64.0):
+            self.assertIsNone(web._too_big_for_full_size(upload_id))
+
+    def test_newer_version_is_told(self):
+        reply = mock.MagicMock()
+        reply.__enter__.return_value.read.return_value = b'{"info": {"version": "9.0.0"}}'
+        (web.DATA / "version.json").unlink(missing_ok=True)
+        with mock.patch.object(web.urllib.request, "urlopen", return_value=reply), \
+                mock.patch.object(web.local, "version", return_value="0.5.0"):
+            web._check_for_update()
+        try:
+            self.assertEqual(web._update, "9.0.0")
+            self.assertEqual(self.here.get("/api/options", cookies={web.LOCAL_COOKIE: "k" * 32}).json()["update"], "9.0.0")
+        finally:
+            web._update = None
+            (web.DATA / "version.json").unlink(missing_ok=True)
 
     def test_installer_is_served(self):
         web.LOCAL = False

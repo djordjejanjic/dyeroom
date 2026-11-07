@@ -6,7 +6,7 @@ readme = "README.md"
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE", "SOURCES.md", "dyeroom/data/LICENSE-*.txt"]
 authors = [{ name = "Djordje Janjic" }]
-requires-python = ">=3.11"
+requires-python = ">=3.12"  # NumPy and SciPy publish ready-made packages from 3.12
 dependencies = ["numpy", "scipy", "colour-science", "rawpy", "pillow", "tifffile", "imagecodecs", "opencv-python-headless",
                 "pi-heif", "fastapi", "uvicorn[standard]", "python-multipart", "pyjwt[crypto]", "onnxruntime"]
 

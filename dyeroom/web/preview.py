@@ -1,12 +1,14 @@
 """A look at a photograph before it is developed:  python -m dyeroom.web.preview SOURCE OUT_DIR
 
-Writes OUT_DIR/thumb.jpg for the frames list, then OUT_DIR/preview.jpg for the viewer: the
+Writes OUT_DIR/size.json (the photograph's own width and height, for the memory a full-size
+development needs), OUT_DIR/thumb.jpg for the frames list, then OUT_DIR/preview.jpg for the viewer: the
 image file itself made small, or for a raw the camera's own JPEG inside it (a quick decode of
 the raw when there is none big enough, ExifTool's copy when LibRaw cannot open the file),
 turned upright. Nothing about the development depends on it. Run in its own process, as the
 developer is: a file made to crash a decoder takes down only this.
 """
 import io
+import json
 import os
 import subprocess
 import sys
@@ -110,9 +112,25 @@ def write(img, out):
         os.replace(tmp, out / name)
 
 
+def pixels(path):
+    """(width, height) of the photograph as it would develop at full size; None if unknown."""
+    path = Path(path)
+    try:
+        if path.suffix.lower() in IMAGES:
+            with Image.open(path) as img:
+                return img.size
+        with rawpy.imread(str(path)) as raw:
+            return raw.sizes.width, raw.sizes.height
+    except (rawpy.LibRawError, OSError, ValueError, Image.DecompressionBombError):
+        return None
+
+
 def main():
     source, out = Path(sys.argv[1]), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
+    size = pixels(source)
+    if size:
+        (out / "size.json").write_text(json.dumps({"width": size[0], "height": size[1]}), encoding="utf-8")
     img = read(source)
     if img is not None:
         write(img, out)

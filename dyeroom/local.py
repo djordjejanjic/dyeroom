@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import plistlib
+import re
 import secrets
 import shutil
 import signal
@@ -58,7 +59,8 @@ def folders():
             Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "dyeroom")
 
 
-def _memory_gb():
+def memory_gb():
+    """This computer's memory in GB, or None if it cannot be read."""
     if sys.platform == "win32":
         return _windows_memory_gb()
     try:
@@ -86,7 +88,7 @@ def _windows_memory_gb():
 
 def workers():
     """Drafts developed at once: each takes about 3 GB and a few cores; full size goes one at a time."""
-    return max(1, min(4, (os.cpu_count() or 2) // 4, int((_memory_gb() or 8) // 8)))
+    return max(1, min(4, (os.cpu_count() or 2) // 4, int((memory_gb() or 8) // 8)))
 
 
 def settings(port, key):
@@ -130,12 +132,11 @@ def _free_port():
         return s.getsockname()[1]
 
 
-def _start():
-    """Start the lab in the background and wait until it answers."""
+def _start(info):
+    """Start the lab ({port, key}) in the background and wait until it answers."""
     data, cache = folders()
     data.mkdir(parents=True, exist_ok=True)
     cache.mkdir(parents=True, exist_ok=True)
-    info = {"port": _free_port(), "key": secrets.token_urlsafe(24)}
     with open(cache / "lab.log", "ab") as log:
         # -I and its own folder: the installed Dyeroom, never a dyeroom folder where the command was typed.
         # Detached, so it goes on running when the terminal that started it closes.
@@ -154,26 +155,69 @@ def _start():
     return info
 
 
-def window(url):
-    """An app window (no tabs or address bar) in a Chromium browser if there is one, else a tab."""
+def _app_browser():
+    """How to open an app window (no tabs or address bar) in a Chromium browser: a function of the
+    address, or None when there is none (Chrome, Edge, Chromium or Brave)."""
     if sys.platform == "darwin":
         for name in MAC_BROWSERS:
             if any(Path(base, f"{name}.app").exists() for base in ("/Applications", Path.home() / "Applications")):
-                subprocess.run(["open", "-na", name, "--args", f"--app={url}"], check=False)
-                return
+                return lambda url: subprocess.run(["open", "-na", name, "--args", f"--app={url}"], check=False)
     elif sys.platform == "win32":
         roots = [os.environ.get(k) for k in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")]
         for exe in (Path(root, name) for name in WINDOWS_BROWSERS for root in roots if root):
             if exe.is_file():
-                subprocess.Popen([str(exe), f"--app={url}"])
-                return
+                return lambda url: subprocess.Popen([str(exe), f"--app={url}"])
     elif sys.platform.startswith("linux"):
         for name in LINUX_BROWSERS:
             if exe := shutil.which(name):
-                subprocess.Popen([exe, f"--app={url}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                 start_new_session=True)
-                return
-    webbrowser.open(url)
+                return lambda url: subprocess.Popen([exe, f"--app={url}"], stdout=subprocess.DEVNULL,
+                                                    stderr=subprocess.DEVNULL, start_new_session=True)
+    return None
+
+
+def window(url):
+    """An app window in a Chromium browser if there is one, else a tab in the default browser."""
+    (_app_browser() or webbrowser.open)(url)
+
+
+# What the window shows at once while the lab starts (the first start after installing can take a
+# while). A page opened from disk may not ask the lab itself whether it is up, so the launcher
+# leaves a file beside it when it is (ready.png) or when it could not start (failed.png).
+STARTING = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Dyeroom</title>
+<style>
+  html { height: 100%; background: #141311; color: #ece4d4;
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { margin: 0; height: 100%; display: grid; place-items: center; text-align: center; padding: 0 24px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  p { margin: 0 auto; color: #a59d8f; max-width: 28rem; }
+</style></head>
+<body><div><h1>Starting the lab</h1><p id="note">The first start after installing takes a little longer.</p></div>
+<script>
+  const lab = LAB, log = LOG, since = Date.now();
+  const look = (name, then) => { const img = new Image(); img.onload = then; img.src = name + "?" + Date.now(); };
+  (function wait() {
+    look("ready.png", () => location.replace(lab));
+    look("failed.png", () => {
+      document.getElementById("note").textContent = "Dyeroom did not start. What it said is in " + log;
+    });
+    if (Date.now() - since < 300000) setTimeout(wait, 400);
+  })();
+</script></body></html>
+"""
+
+
+def _starting_window(open_window, url):
+    """Open the starting page now; returns the folder to leave ready.png or failed.png in."""
+    folder = folders()[1] / "starting"
+    folder.mkdir(parents=True, exist_ok=True)
+    for name in ("ready.png", "failed.png"):
+        (folder / name).unlink(missing_ok=True)
+    page = folder / "index.html"
+    page.write_text(STARTING.replace("LAB", json.dumps(url)).replace("LOG", json.dumps(str(folders()[1] / "lab.log"))),
+                    encoding="utf-8")
+    open_window(page.as_uri())
+    return folder
 
 
 def open_lab(show=True, foreground=False):
@@ -190,20 +234,37 @@ def open_lab(show=True, foreground=False):
     info = _running()
     if info is None:
         print("Starting the lab...")
-        if sys.platform == "darwin" and not sys.stdout.isatty():  # opened from its icon: say something
-            note = 'display notification "Starting the lab, a moment." with title "Dyeroom"'
+        info = {"port": _free_port(), "key": secrets.token_urlsafe(24)}
+        url = f"http://127.0.0.1:{info['port']}/app?key={info['key']}"
+        app_window = _app_browser() if show else None
+        starting = _starting_window(app_window, url) if app_window else None
+        if show and not starting and sys.platform == "darwin" and not sys.stdout.isatty():
+            note = 'display notification "Starting the lab, a moment." with title "Dyeroom"'  # no window to say it
             try:  # never wait on it: with no one logged in to see it, it may not return
                 subprocess.run(["osascript", "-e", note], capture_output=True, check=False, timeout=5)
             except subprocess.TimeoutExpired:
                 pass
-        info = _start()
+        try:
+            _start(info)
+        except SystemExit:
+            if starting:
+                shutil.copyfile(ICON, starting / "failed.png")
+            raise
+        if starting:
+            shutil.copyfile(ICON, starting / "ready.png")  # the starting page turns into the lab
+        elif show:
+            window(url)
         from . import metadata
         if not metadata.available():
             print("Tip: with ExifTool installed, exports keep the camera's metadata "
-                  "(macOS: brew install exiftool; Linux: sudo apt install libimage-exiftool-perl).")
-    url = f"http://127.0.0.1:{info['port']}/app?key={info['key']}"
-    if show:
-        window(url)
+                  "(macOS: brew install exiftool; Linux: sudo apt install libimage-exiftool-perl; "
+                  "Windows: winget install OliverBetz.ExifTool).")
+    else:
+        url = f"http://127.0.0.1:{info['port']}/app?key={info['key']}"
+        if show:
+            window(url)
+    if later := newer_version():
+        print(f"Dyeroom {later} is out: run the installer again, or: uv tool upgrade dyeroom")
     print(f"Dyeroom is open at {url}\nIt stops by itself some minutes after the last window closes (or: dyeroom stop).")
 
 
@@ -232,11 +293,27 @@ def stop():
     print("The lab is stopping.")
 
 
-def _version():
+def version():
+    """The installed Dyeroom's version."""
     try:
         return package_metadata.version("dyeroom")
     except package_metadata.PackageNotFoundError:
         return "0"
+
+
+def newer(latest, than):
+    """Whether version latest (X.Y.Z) comes after than."""
+    numbers = lambda v: tuple(int(n) for n in re.findall(r"\d+", v or "")[:3])
+    return bool(latest) and numbers(latest) > numbers(than)
+
+
+def newer_version():
+    """A newer Dyeroom on PyPI, as the lab last found it (version.json), or None."""
+    try:
+        latest = json.loads((folders()[0] / "version.json").read_text(encoding="utf-8")).get("latest")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return latest if newer(latest, version()) else None
 
 
 def _mac_icon(target):
@@ -268,7 +345,7 @@ def shortcut(home=None):
             plistlib.dump({"CFBundleName": "Dyeroom", "CFBundleDisplayName": "Dyeroom",
                            "CFBundleIdentifier": "com.sysi.dyeroom", "CFBundleExecutable": "Dyeroom",
                            "CFBundleIconFile": "Dyeroom", "CFBundlePackageType": "APPL",
-                           "CFBundleShortVersionString": _version(),
+                           "CFBundleShortVersionString": version(),
                            "LSArchitecturePriority": ["arm64", "x86_64"],
                            "LSUIElement": True}, f)  # it opens the window and is gone: no Dock icon of its own
         launcher = app / "Contents" / "MacOS" / "Dyeroom"

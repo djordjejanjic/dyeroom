@@ -99,6 +99,19 @@ the installer on all three, develops the sample through the lab and opens it fro
   running; its tools run with `CREATE_NO_WINDOW`; `dyeroom stop` ends it at once (Windows has no
   gentle signal) and removes `lab.json` itself; memory comes from `GlobalMemoryStatusEx`. Text
   files are read and written as UTF-8 throughout, not in the system's code page.
+* **A window at once:** with a Chromium browser, `dyeroom` opens a "Starting the lab" page from
+  disk before the lab answers (the first start after installing can take a while, as the system
+  looks over the new libraries). A page from disk may not ask the lab itself, so the launcher
+  leaves `ready.png` beside it when the lab answers (the page then goes to the lab) or
+  `failed.png` when it cannot start (the page says where the log is). Without one, the window
+  opens when the lab answers, and on macOS a notification says it is starting.
+* **Full size must fit:** the preview step records each photograph's own width and height
+  (`size.json`); a full-size development needing more than 70 % of this computer's memory
+  (1.5 GB + 0.15 GB per megapixel: measured 4.0-4.3 GB for 20 MP on a Mac, 6.8 GB for 49 MP on
+  Linux) is refused with the reason and the advice to develop a draft. Local mode only.
+* **Updates:** once a day the lab asks PyPI for the latest version (`version.json` in the
+  app-data folder; `DYEROOM_UPDATE_CHECK=0` stops it), the one thing it sends anywhere, and the
+  status bar and the `dyeroom` command say when a newer one is out.
 * **Colourising:** the model is not in the package; `dyeroom colourise-model` fetches it from
   the GitHub release `colourise-model-1` and checks its SHA-256.
 * **Releasing:** a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds the wheel and

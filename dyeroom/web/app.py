@@ -51,6 +51,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.request
 import uuid
 import zipfile
 from pathlib import Path
@@ -65,7 +66,7 @@ from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .. import adjust, colourise, metadata, mono, output, pipeline, spectra
+from .. import adjust, colourise, local, metadata, mono, output, pipeline, spectra
 from ..capture import FORMATS, RAW_SUFFIXES
 from ..spectra import FILTERS
 from ..viewing import VIEWINGS
@@ -93,6 +94,14 @@ LOCAL_KEY = os.environ.get("DYEROOM_LOCAL_KEY", "")
 LOCAL_COOKIE = "dyeroom_key"
 LOCAL_STOP_SECONDS = 600
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # Windows: no console flashing up for each development
+# Peak memory of a full-size development, GB = BASE + PER_MP x megapixels: measured 4.0-4.3 GB for
+# 20 MP on a Mac, 6.8 GB for 49 MP on the Linux server, with some to spare. In local mode a
+# full-size development that would need more than FULL_SHARE of this computer's memory is refused
+# with the reason, so a large raw does not bring the computer to a crawl or get killed half-way.
+FULL_GB_BASE, FULL_GB_PER_MP, FULL_SHARE = 1.5, 0.15, 0.7
+# Local mode asks PyPI once a day whether a newer Dyeroom is out (the one thing the lab sends
+# anywhere; DYEROOM_UPDATE_CHECK=0 stops it), and the page says so.
+UPDATE_CHECK = LOCAL and os.environ.get("DYEROOM_UPDATE_CHECK", "1") not in ("0", "false", "no")
 PUBLIC_URL = os.environ.get("DYEROOM_PUBLIC_URL", "").rstrip("/")
 ADMINS = {e.strip().lower() for e in os.environ.get("DYEROOM_ADMIN_EMAILS", "").split(",") if e.strip()}
 ADMIN_PASSWORD = os.environ.get("DYEROOM_ADMIN_PASSWORD", "")
@@ -602,8 +611,32 @@ def _stop_when_unused():
             return
 
 
+_update = None  # a newer version on PyPI, once found
+
+
+def _check_for_update():
+    """Local mode: the latest Dyeroom on PyPI, asked at most once a day and kept in DATA/version.json
+    (where the dyeroom command also reads it)."""
+    global _update
+    known_file = DATA / "version.json"
+    try:
+        known = json.loads(known_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        known = {}
+    if time.time() - known.get("checked", 0) > 86400:
+        try:
+            with urllib.request.urlopen("https://pypi.org/pypi/dyeroom/json", timeout=10) as reply:
+                known = {"checked": time.time(), "latest": json.loads(reply.read())["info"]["version"]}
+            known_file.write_text(json.dumps(known), encoding="utf-8")
+        except (OSError, ValueError, KeyError):
+            return  # offline: no word, try again next start
+    _update = known.get("latest") if local.newer(known.get("latest"), local.version()) else None
+
+
 if LOCAL:
     threading.Thread(target=_stop_when_unused, daemon=True).start()
+if UPDATE_CHECK:
+    threading.Thread(target=_check_for_update, daemon=True).start()
 
 
 # --- API ---------------------------------------------------------------------------------
@@ -635,7 +668,7 @@ def options():
             "providers": [{"id": i, "label": label} for i, label in sso.enabled()] if ACCOUNTS else [],
             "free_frames": accounts.FREE_FRAMES, "billing": billing.config() if ACCOUNTS else None,
             "contact": pages.CONTACT or None, "refund_days": pages.REFUND_DAYS, "donate": pages.DONATE or None,
-            "local": LOCAL}
+            "local": LOCAL, "update": _update}
 
 
 def _upload_name(filename):
@@ -657,6 +690,22 @@ def _arrived_whole(request, user, upload_id, size, sha):
     _previews[upload_id] = "making"
     _previewer.submit(_make_preview, upload_id)
     stats.event("funnel 2: added a photograph")
+
+
+def _too_big_for_full_size(upload_id):
+    """Local mode: why this photograph cannot be developed at full size on this computer, or None."""
+    try:
+        size = json.loads((PREVIEWS / upload_id / "size.json").read_text(encoding="utf-8"))
+        megapixels = size["width"] * size["height"] / 1e6
+    except (OSError, ValueError, KeyError, TypeError):
+        return None  # not known yet: let it try
+    memory = local.memory_gb()
+    need = FULL_GB_BASE + FULL_GB_PER_MP * megapixels
+    if memory is None or need <= FULL_SHARE * memory:
+        return None
+    return (f"This photograph is {megapixels:.0f} megapixels: at full size it needs about {need:.0f} GB of "
+            f"memory, more than this computer can spare ({memory:.0f} GB in all). Develop it as a draft, "
+            "or at full size on a computer with more memory.")
 
 
 def _make_preview(upload_id):
@@ -847,6 +896,10 @@ def create_job(req: JobRequest, request: Request):
         raise HTTPException(422, "Unknown setting")
     if req.size == "full" and not ALLOW_FULL:
         raise HTTPException(403, "Full-size developing is switched off on this server")
+    if req.size == "full" and LOCAL:
+        too_big = _too_big_for_full_size(req.upload_id)
+        if too_big:
+            raise HTTPException(422, too_big)
     req.ev = round(req.ev * 3) / 3  # thirds of a stop, as the page offers
     source = next((UPLOADS / req.upload_id).iterdir())
     sample = _is_sample(source)
@@ -1436,7 +1489,8 @@ app.mount("/static", Static(directory=STATIC), name="static")
 def licences():
     """Licences of the data and models Dyeroom is built on."""
     data = Path(__file__).resolve().parents[1] / "data"
-    parts = [f"{'=' * 78}\n{path.name}\n{'=' * 78}\n\n{path.read_text(encoding="utf-8")}" for path in sorted(data.glob("LICENSE-*.txt"))]
+    parts = [f"{'=' * 78}\n{path.name}\n{'=' * 78}\n\n{path.read_text(encoding='utf-8')}"
+             for path in sorted(data.glob("LICENSE-*.txt"))]
     return Response("\n\n".join(parts), media_type="text/plain; charset=utf-8")
 
 

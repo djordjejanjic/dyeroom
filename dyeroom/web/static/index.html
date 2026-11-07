@@ -9,7 +9,7 @@
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-<link rel="manifest" href="/static/site.webmanifest">
+<link rel="manifest" href="/static/site.webmanifest" crossorigin="use-credentials">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -298,6 +298,7 @@
   <span class="status-bar" id="status-bar" hidden><span id="status-fill"></span></span>
   <span class="spacer"></span>
   <span id="queue"></span>
+  <a class="status-link" id="update-status" href="https://github.com/djordjejanjic/dyeroom/releases/latest" target="_blank" rel="noopener" title="To update: run the installer again, or: uv tool upgrade dyeroom" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 16V8.5M8.8 11.5 12 8.3l3.2 3.2"/></svg><span></span></a>
   <a class="status-link donate-link" id="donate-status" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5h11v4.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.6a2.4 2.4 0 0 1 0 4.8H16"/><path d="M9 3.8c-.6.7-.6 1.5 0 2.2M12.5 3.8c-.6.7-.6 1.5 0 2.2"/></svg>Buy me a coffee</a>
   <button class="status-tool" id="keys-open" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 9.5h.01M9 9.5h.01M12 9.5h.01M15 9.5h.01M18 9.5h.01M6 12.5h.01M18 12.5h.01M9 12.5h6M8 15h8"/></svg></button>
   <button class="status-tool" id="about-open" type="button" title="About Dyeroom" aria-label="About Dyeroom"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg></button>

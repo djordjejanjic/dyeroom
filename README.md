@@ -2,6 +2,8 @@
 
 *Developed the long way.*
 
+<a href="https://buymeacoffee.com/geoyanj"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="44"></a>
+
 ![One raw file: as the camera recorded it, and developed on Sunday 64, seen on a light box](.github/readme/flowers.jpg)
 
 Dyeroom develops your digital photographs, raw files or phone pictures, on simulated film.
@@ -50,6 +52,9 @@ dyeroom PHOTO.RAF            # or develop from the command line: a draft, into .
 dyeroom --help
 uv tool upgrade dyeroom      # update
 ```
+
+Or with pip, in any Python 3.12 or newer (a virtual environment, or `pipx install dyeroom`):
+`pip install dyeroom`, then `dyeroom` (and `dyeroom shortcut` for the icon).
 
 With [ExifTool](https://exiftool.org) installed, exports keep the camera's metadata. To remove
 it all: `uv tool uninstall dyeroom`, then delete Dyeroom from your applications and its folders

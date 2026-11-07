@@ -2009,7 +2009,8 @@ function privacyText(long) {
   if (!p) return "";
   if (options.local) {
     return long ? "Your photographs stay on this computer. Dyeroom works on copies in its own folder while "
-      + "you work and deletes them when it next starts; nothing is sent anywhere." : "Nothing leaves this computer.";
+      + "you work and deletes them when it next starts. The one thing it sends out is a question to PyPI, once "
+      + "a day, whether a newer version is there." : "Nothing leaves this computer.";
   }
   if (!long) return "Nothing is stored: your photographs are deleted when you leave.";
   const where = p.in_memory ? "in the server's memory, never on a disk, and only while you work" : "only while you work";
@@ -2566,6 +2567,10 @@ async function start() {
       $("fact-privacy").querySelector("b").textContent = "On this computer";
       $("fact-privacy").querySelector("b + span").textContent = "Nothing is uploaded";
       setInterval(() => fetch("/api/here").catch(() => {}), 60000);  // the lab runs while a window is open
+      if (options.update) {
+        $("update-status").querySelector("span").textContent = `Dyeroom ${options.update} is out`;
+        $("update-status").hidden = false;
+      }
     }
     if (!options.full) {
       $("size-full").disabled = true;

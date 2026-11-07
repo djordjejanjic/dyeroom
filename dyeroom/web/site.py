@@ -75,7 +75,7 @@ def _head(title, description, path, base, image, image_alt, jsonld, robots="inde
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-<link rel="manifest" href="/static/site.webmanifest">
+<link rel="manifest" href="/static/site.webmanifest" crossorigin="use-credentials">
 <link rel="stylesheet" href="{_stamp('site.css')}">
 {data}"""
 

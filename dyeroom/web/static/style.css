@@ -857,6 +857,11 @@ kbd {
 .status-tool:hover { color: var(--ink); background: var(--raised); }
 .status-link { margin-right: 8px; font-size: 12px; color: var(--tertiary); text-decoration: none; }
 .status-link:hover { color: var(--ink); }
+/* A newer version is out (the app on your own computer): quiet, until hovered */
+#update-status { display: inline-flex; align-items: center; gap: 6px; }
+#update-status[hidden] { display: none; }
+#update-status svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6;
+                     stroke-linecap: round; stroke-linejoin: round; }
 /* Buy me a coffee: the one thing in yellow, with its cup */
 .donate-link { display: inline-flex; align-items: center; gap: 6px; color: var(--coffee); font-weight: 500; text-decoration: none; }
 .donate-link:hover { color: var(--coffee-hover); }
