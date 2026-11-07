@@ -21,6 +21,10 @@ through the chemistry, step by step.
   box or a projector, rebuilt for your screen.
 - **Monday 400**, a black-and-white negative: developed (pushed if you like), fixed, and
   enlarged onto graded paper, with selenium toning if you want it.
+- **Colourising**, for black-and-white originals: an AI model ([DDColor](https://github.com/piddnad/DDColor))
+  guesses their colours, then they go onto Sunday 64 like any colour photograph. The tones stay
+  the photograph's own, and the result says the colours are a guess, on the page and in the
+  exported file's metadata.
 
 The films are built from their makers' published measurements and checked against them; what
 is measured, what is fitted and what is assumed is written down in
