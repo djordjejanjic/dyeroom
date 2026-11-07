@@ -1,0 +1,31 @@
+# The public way in, as people use it: the install line from dyeroom.app, Dyeroom from PyPI,
+# then the lab develops the sample photograph and opens from its shortcut. Weekly, and by hand
+# after a release or a deploy.
+name: Live install
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"
+
+jobs:
+  live:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5  # for the sample photograph and the check
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install (macOS, Linux)
+        if: runner.os != 'Windows'
+        run: curl -LsSf https://dyeroom.app/install.sh | sh
+      - name: Install (Windows PowerShell)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex"
+      - name: The lab develops a photograph
+        run: python tools/smoke_local.py samples/sample-olympus-e-p7.orf
