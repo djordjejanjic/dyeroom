@@ -2,7 +2,15 @@
 
 *Developed the long way.*
 
+<p align="center">
+I built Dyeroom for my own photographs, and it grew into a big project: a film model checked
+against its makers' data sheets, a darkroom that runs in the browser and on your own computer,
+and the server behind dyeroom.app. I decided to share all of it with everyone, free and open.
+If it is worth something to you, a coffee keeps it public and keeps new versions coming.
+</p>
+<p align="center">
 <a href="https://buymeacoffee.com/geoyanj"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="44"></a>
+</p>
 
 ![One raw file: as the camera recorded it, and developed on Sunday 64, seen on a light box](.github/readme/flowers.jpg)
 
