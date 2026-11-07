@@ -269,10 +269,16 @@ def shortcut(home=None):
                            "CFBundleIdentifier": "com.sysi.dyeroom", "CFBundleExecutable": "Dyeroom",
                            "CFBundleIconFile": "Dyeroom", "CFBundlePackageType": "APPL",
                            "CFBundleShortVersionString": _version(),
+                           "LSArchitecturePriority": ["arm64", "x86_64"],
                            "LSUIElement": True}, f)  # it opens the window and is gone: no Dock icon of its own
         launcher = app / "Contents" / "MacOS" / "Dyeroom"
         log = folders()[1] / "open.log"  # what it says, opened from the icon, for when it does not open
-        launcher.write_text(f'#!/bin/sh\nmkdir -p "{log.parent}"\nexec {command} >> "{log}" 2>&1\n', encoding="utf-8")
+        # Finder may start a script under Rosetta, as an Intel program; Python must then still run as what
+        # this Mac is (its libraries are for that), so on Apple silicon it is started as arm64 outright.
+        launcher.write_text(f'#!/bin/sh\nmkdir -p "{log.parent}"\n'
+                            'if [ "$(/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]; then\n'
+                            f'  exec /usr/bin/arch -arm64 {command} >> "{log}" 2>&1\nfi\n'
+                            f'exec {command} >> "{log}" 2>&1\n', encoding="utf-8")
         launcher.chmod(0o755)
         try:
             _mac_icon(app / "Contents" / "Resources" / "Dyeroom.icns")

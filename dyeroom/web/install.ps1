@@ -16,6 +16,7 @@ $python = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "cpython-3.12-windows-x
 $package = if ($env:DYEROOM_PACKAGE) { $env:DYEROOM_PACKAGE } else { "dyeroom" }
 
 Write-Host "Installing Dyeroom..."
+$env:UV_PYTHON_PREFERENCE = "only-managed"  # uv's own Python, the same everywhere
 uv tool install --upgrade --compile-bytecode --python $python $package
 if ($LASTEXITCODE -ne 0) { Write-Host "Dyeroom could not be installed."; exit 1 }
 uv tool update-shell 2>&1 | Out-Null  # so the dyeroom command is found in new terminals

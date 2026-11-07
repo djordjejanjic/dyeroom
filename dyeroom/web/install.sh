@@ -22,7 +22,9 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 say "Installing Dyeroom..."
-uv tool install --upgrade --compile-bytecode --python 3.12 "${DYEROOM_PACKAGE:-dyeroom}"  # compiled now: a quicker first start
+# uv's own Python, the same everywhere (not one already installed, which may be built differently);
+# compiled now, for a quicker first start
+UV_PYTHON_PREFERENCE=only-managed uv tool install --upgrade --compile-bytecode --python 3.12 "${DYEROOM_PACKAGE:-dyeroom}"
 uv tool update-shell >/dev/null 2>&1 || true  # so the dyeroom command is found in new terminals
 
 dyeroom="$(uv tool dir --bin)/dyeroom"
