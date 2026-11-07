@@ -2,7 +2,7 @@
 import argparse
 from pathlib import Path
 
-from . import capture, metadata, mono, output, pipeline, spectra
+from . import capture, local, metadata, mono, output, pipeline, spectra
 from .viewing import VIEWINGS
 from .capture import RAW_SUFFIXES
 from .process import Process
@@ -23,8 +23,13 @@ def collect(inputs):
 
 
 def main():
+    import sys
+    if len(sys.argv) < 2 or sys.argv[1] in local.COMMANDS:  # python -m dyeroom: the lab, as the command
+        return local.main(sys.argv[1:])
     ap = argparse.ArgumentParser(prog="dyeroom", description="Develop photographs as Sunday 64 slides "
-                                                           "or Monday 400 black-and-white prints.")
+                                                           "or Monday 400 black-and-white prints.",
+                                 epilog="With no photographs, dyeroom opens the lab on this computer in a "
+                                        "window; also: dyeroom stop, dyeroom shortcut, dyeroom colourise-model.")
     ap.add_argument("inputs", nargs="+", help="raw files, images, or folders")
     ap.add_argument("--film", choices=list(pipeline.FILMS), default="sunday64",
                     help="sunday64: colour slide; monday400: black-and-white negative, printed")

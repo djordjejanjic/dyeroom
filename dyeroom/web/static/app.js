@@ -2007,6 +2007,10 @@ async function clearLab() {
 function privacyText(long) {
   const p = options && options.privacy;
   if (!p) return "";
+  if (options.local) {
+    return long ? "Your photographs stay on this computer. Dyeroom works on copies in its own folder while "
+      + "you work and deletes them when it next starts; nothing is sent anywhere." : "Nothing leaves this computer.";
+  }
   if (!long) return "Nothing is stored: your photographs are deleted when you leave.";
   const where = p.in_memory ? "in the server's memory, never on a disk, and only while you work" : "only while you work";
   const hours = p.keep_hours === 1 ? "an hour" : `${String(p.keep_hours).replace(/\.0$/, "")} hours`;
@@ -2556,6 +2560,12 @@ async function start() {
     if (options.donate && !options.accounts) {  // free: a coffee, if they like it
       document.querySelectorAll("#fact-free, .donate-link").forEach((a) => { a.href = options.donate; a.hidden = false; });
       $("about-free").hidden = false;
+    }
+    if (options.local) {  // the lab on this computer: no service terms, and nothing leaves it
+      document.querySelectorAll(".legal-links a").forEach((a) => { a.hidden = true; });
+      $("fact-privacy").querySelector("b").textContent = "On this computer";
+      $("fact-privacy").querySelector("b + span").textContent = "Nothing is uploaded";
+      setInterval(() => fetch("/api/here").catch(() => {}), 60000);  // the lab runs while a window is open
     }
     if (!options.full) {
       $("size-full").disabled = true;

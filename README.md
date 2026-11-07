@@ -23,26 +23,32 @@ photographs are deleted when you leave.
 
 ## Run it on your computer
 
-A one-command install for macOS, Windows and Linux is on its way. Until then, from source
-(Python 3.11 or later; macOS and Linux for now, Windows is being worked on):
+On macOS or Linux, in a terminal:
 
 ```sh
-git clone https://github.com/djordjejanjic/dyeroom
-cd dyeroom
-python3 -m venv .venv
-.venv/bin/pip install -e ".[web]"
-.venv/bin/dyeroom-web          # then open http://127.0.0.1:8000
+curl -LsSf https://dyeroom.app/install.sh | sh
 ```
 
-Or from the command line, without the app:
+It installs [uv](https://docs.astral.sh/uv/), which brings its own Python, then Dyeroom, and
+adds Dyeroom to your applications. Open it from there, or type `dyeroom`. Your photographs stay
+on your computer: the lab runs there, uses all of it, and stops by itself when you close its
+window. Nothing needs administrator rights or a signed installer. Windows is on its way.
 
 ```sh
-.venv/bin/dyeroom PHOTO.RAF                  # a draft, into ./out
-.venv/bin/dyeroom PHOTO.RAF --full --tiff    # full resolution, and a 16-bit TIFF
-.venv/bin/dyeroom --help
+dyeroom                      # open the lab (in an app window if you have Chrome, Edge or Brave)
+dyeroom stop                 # stop it now
+dyeroom colourise-model      # fetch the model that colourises black-and-white originals (270 MB)
+dyeroom PHOTO.RAF            # or develop from the command line: a draft, into ./out
+dyeroom --help
+uv tool upgrade dyeroom      # update
 ```
 
-With [ExifTool](https://exiftool.org) installed, exports keep the camera's metadata.
+With [ExifTool](https://exiftool.org) installed, exports keep the camera's metadata. To remove
+it all: `uv tool uninstall dyeroom`, then delete Dyeroom from your applications and its folders
+(`~/Library/Application Support/Dyeroom` and `~/Library/Caches/Dyeroom` on macOS,
+`~/.local/share/dyeroom` and `~/.cache/dyeroom` on Linux).
+
+From source, for working on it: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Support it
 

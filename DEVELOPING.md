@@ -62,6 +62,38 @@ On a 12-core Mac a 20 MP raw takes about 10 s and 2.9 GB of memory as a 2400 px 
 about 30 s and 6 GB at full resolution (Monday 400: 7 s and 11 s). The first run also builds
 two caches (about 10 s). `tools/cost.py` measures this on any machine.
 
+## On your own computer (`local.py`)
+
+`dyeroom` with no photographs starts the web app on this computer and opens it; installed with
+`curl -LsSf https://dyeroom.app/install.sh | sh` (served from `dyeroom/web/install.sh`), which
+installs uv if needed and then `uv tool install --python 3.12 dyeroom`, and runs `dyeroom shortcut`.
+
+* **Private to the computer** (`DYEROOM_LOCAL=1`, set by `local.py`): it listens on 127.0.0.1
+  at a free port. The window opens `/app?key=…` with a key made at each start; the server swaps
+  it for an HttpOnly, SameSite=Strict cookie that every request must carry, and refuses any
+  request whose Host is not this computer, so no website can reach it through the browser
+  (DNS rebinding included). `/` goes straight to the lab.
+* **No service rules:** no accounts, fair-use limits (this computer is `DYEROOM_UNLIMITED`),
+  legal links or deletion deadlines worth the name (24 hours); the working copies live in the
+  system's cache folder and are emptied at each start. The page says photographs stay on this
+  computer.
+* **Fits the computer:** drafts developed at once = min(4, cores / 4, memory / 8 GB); full size
+  one at a time.
+* **Starts once, stops by itself:** `lab.json` in the app-data folder holds the port, key and
+  process of a running lab, so a second `dyeroom` opens another window on it. An open page says
+  it is there every minute (`/api/here`); with no word for 10 minutes and nothing developing,
+  the lab stops (on the monotonic clock, so a sleeping computer does not count). `dyeroom stop`
+  stops it now.
+* **The window:** an app window (`--app=`) in Chrome, Edge, Chromium or Brave when there is one,
+  else the default browser. `dyeroom shortcut` adds Dyeroom.app to `~/Applications` (macOS: a
+  shell script, built on the computer, so it needs no signing; icon made with `sips` and
+  `iconutil`) or a desktop entry (Linux). Both run the installed Python with `-I`, so a
+  `dyeroom` folder where you happen to be is never imported instead.
+* **Colourising:** the model is not in the package; `dyeroom colourise-model` fetches it from
+  the GitHub release `colourise-model-1` and checks its SHA-256.
+* **Releasing:** a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds the wheel and
+  publishes it to PyPI through trusted publishing (no token stored anywhere).
+
 ## Web app
 
 **The site and the lab.** `/` is the home page (`site.py`, `static/site.css`): finished HTML

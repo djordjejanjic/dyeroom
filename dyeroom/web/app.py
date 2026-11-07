@@ -45,6 +45,7 @@ import os
 import re
 import secrets
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -84,6 +85,13 @@ AUTH = (os.environ.get("DYEROOM_USER"), os.environ.get("DYEROOM_PASSWORD"))
 SAMPLE = Path(os.environ.get("DYEROOM_SAMPLE",
                              Path(__file__).resolve().parents[2] / "samples" / "sample-olympus-e-p7.orf"))
 ACCOUNTS = os.environ.get("DYEROOM_ACCOUNTS", "0") not in ("0", "false", "no", "")
+# Local mode: the lab on the photographer's own computer, started by the dyeroom command
+# (dyeroom/local.py). Only this computer, with the key made at this start, gets in, and the lab
+# stops once no window has been in touch for LOCAL_STOP_SECONDS and nothing is developing.
+LOCAL = os.environ.get("DYEROOM_LOCAL", "0") in ("1", "true", "yes")
+LOCAL_KEY = os.environ.get("DYEROOM_LOCAL_KEY", "")
+LOCAL_COOKIE = "dyeroom_key"
+LOCAL_STOP_SECONDS = 600
 PUBLIC_URL = os.environ.get("DYEROOM_PUBLIC_URL", "").rstrip("/")
 ADMINS = {e.strip().lower() for e in os.environ.get("DYEROOM_ADMIN_EMAILS", "").split(",") if e.strip()}
 ADMIN_PASSWORD = os.environ.get("DYEROOM_ADMIN_PASSWORD", "")
@@ -199,9 +207,31 @@ SECURITY_HEADERS = {
 }
 
 
+def _local_gate(request):
+    """Local mode: the address must name this computer, not a website's name pointed at it, and
+    the request must carry the key the dyeroom command opened the page with: given once in the
+    address, then kept in a cookie that other websites' pages never send."""
+    host = request.headers.get("host", "").rpartition(":")[0].strip("[]") or request.headers.get("host", "")
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        return Response("Dyeroom answers only this computer", status_code=403, media_type="text/plain")
+    given = request.query_params.get("key")
+    if given is not None and LOCAL_KEY and secrets.compare_digest(given, LOCAL_KEY):
+        response = RedirectResponse(request.url.path if request.url.path != "/" else "/app", status_code=303)
+        response.set_cookie(LOCAL_COOKIE, LOCAL_KEY, httponly=True, samesite="strict", path="/")
+        return response
+    if not (LOCAL_KEY and secrets.compare_digest(request.cookies.get(LOCAL_COOKIE, ""), LOCAL_KEY)):
+        return Response("Open Dyeroom from its icon, or type dyeroom in a terminal.", status_code=403,
+                        media_type="text/plain")
+    return None
+
+
 def _refuse(request):
     """Why a request is turned away before its body is read, or None."""
     path, method = request.url.path, request.method
+    if LOCAL:
+        gate = _local_gate(request)
+        if gate is not None:
+            return gate
     if all(AUTH) and path not in ("/api/health", "/api/billing/webhook"):
         header = request.headers.get("authorization", "")
         ok = False
@@ -230,6 +260,9 @@ def _refuse(request):
 @app.middleware("http")
 async def access(request: Request, call_next):
     refused = _refuse(request)
+    if LOCAL and refused is None:
+        global _last_seen
+        _last_seen = time.monotonic()  # stands still while the computer sleeps
     if refused is None and request.url.path == "/api/uploads" and request.method == "POST":
         refused = await _upload_checks(request, int(request.headers.get("content-length") or 0),
                                        request.headers.get("x-fingerprint", ""))  # before the file is sent
@@ -552,6 +585,25 @@ for _ in range(max(1, WORKERS)):
     threading.Thread(target=_dispatcher, daemon=True).start()
 threading.Thread(target=_cleanup, daemon=True).start()
 
+_last_seen = time.monotonic()
+
+
+def _stop_when_unused():
+    """Local mode: stop once no window has been in touch for LOCAL_STOP_SECONDS (an open page
+    says it is there every minute) and nothing is waiting or developing."""
+    while True:
+        time.sleep(30)
+        with _lock:
+            busy = bool(_jobs)
+        if not busy and time.monotonic() - _last_seen > LOCAL_STOP_SECONDS:
+            log.info("No window for %d minutes: the lab stops", LOCAL_STOP_SECONDS // 60)
+            os.kill(os.getpid(), signal.SIGTERM)
+            return
+
+
+if LOCAL:
+    threading.Thread(target=_stop_when_unused, daemon=True).start()
+
 
 # --- API ---------------------------------------------------------------------------------
 
@@ -581,7 +633,8 @@ def options():
                         "keep_hours": round(KEEP_SECONDS / 3600, 1)}, "grades": list(mono.GRADES), "bw_filters": list(mono.FILTERS),
             "providers": [{"id": i, "label": label} for i, label in sso.enabled()] if ACCOUNTS else [],
             "free_frames": accounts.FREE_FRAMES, "billing": billing.config() if ACCOUNTS else None,
-            "contact": pages.CONTACT or None, "refund_days": pages.REFUND_DAYS, "donate": pages.DONATE or None}
+            "contact": pages.CONTACT or None, "refund_days": pages.REFUND_DAYS, "donate": pages.DONATE or None,
+            "local": LOCAL}
 
 
 def _upload_name(filename):
@@ -1385,9 +1438,24 @@ def licences():
     return Response("\n\n".join(parts), media_type="text/plain; charset=utf-8")
 
 
+@app.get("/install.sh")
+def install_script():
+    """The installer for macOS and Linux:  curl -LsSf https://dyeroom.app/install.sh | sh"""
+    return Response((Path(__file__).parent / "install.sh").read_text(), media_type="text/x-shellscript; charset=utf-8",
+                    headers={"Cache-Control": "public, max-age=300"})
+
+
+@app.get("/api/here")
+def here():
+    """An open page saying it is there: local mode keeps the lab running while one is."""
+    return {"ok": True}
+
+
 @app.api_route("/", methods=["GET", "HEAD"])
 def home(request: Request):
     """What Dyeroom is, for people and search engines; the app is at /app."""
+    if LOCAL:
+        return RedirectResponse("/app", status_code=303)
     facts = {"in_memory": IN_MEMORY, "idle_minutes": max(1, round(IDLE_SECONDS / 60)),
              "keep_hours": round(KEEP_SECONDS / 3600, 1)}
     return HTMLResponse(site.home(_base(request), ACCOUNTS, pages.DONATE, facts, MAX_BYTES // (1024 * 1024)),

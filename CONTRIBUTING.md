@@ -17,7 +17,7 @@ welcome.
 git clone https://github.com/djordjejanjic/dyeroom
 cd dyeroom
 python3 -m venv .venv
-.venv/bin/pip install -e ".[web,test]"
+.venv/bin/pip install -e ".[test]"
 .venv/bin/python -m unittest discover -s tests
 .venv/bin/dyeroom-web        # the app at http://127.0.0.1:8000
 ```

@@ -1,17 +1,18 @@
 [project]
 name = "dyeroom"
-version = "0.3.0"
+version = "0.4.0"
 description = "Dyeroom: digital photographs developed through a physically simulated colour slide film and reversal process"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE", "SOURCES.md", "dyeroom/data/LICENSE-*.txt"]
 authors = [{ name = "Djordje Janjic" }]
 requires-python = ">=3.11"
-dependencies = ["numpy", "scipy", "colour-science", "rawpy", "pillow", "tifffile", "imagecodecs", "opencv-python-headless", "pi-heif"]
+dependencies = ["numpy", "scipy", "colour-science", "rawpy", "pillow", "tifffile", "imagecodecs", "opencv-python-headless",
+                "pi-heif", "fastapi", "uvicorn[standard]", "python-multipart", "pyjwt[crypto]", "onnxruntime"]
 
 [project.optional-dependencies]
-web = ["fastapi", "uvicorn[standard]", "python-multipart", "pyjwt[crypto]"]
-colourise = ["onnxruntime"]
+web = []        # now part of the package (the lab is the web app); kept so older install lines work
+colourise = []
 test = ["httpx"]
 
 [project.urls]
@@ -19,7 +20,7 @@ Homepage = "https://dyeroom.app"
 Source = "https://github.com/djordjejanjic/dyeroom"
 
 [project.scripts]
-dyeroom = "dyeroom.__main__:main"
+dyeroom = "dyeroom.local:entry"
 dyeroom-web = "dyeroom.web.app:main"
 
 [build-system]
@@ -31,4 +32,5 @@ packages = ["dyeroom", "dyeroom.web"]
 
 [tool.setuptools.package-data]
 dyeroom = ["data/*.json", "data/*.txt", "data/cache/*.npz", "data/cache/*.npy", "macraw.swift"]
-"dyeroom.web" = ["static/*", "static/og/*", "static/guides/*", "static/about/*", "legal/*.html", "content/*.md"]
+"dyeroom.web" = ["static/*", "static/og/*", "static/guides/*", "static/about/*", "legal/*.html", "content/*.md",
+                 "install.sh"]

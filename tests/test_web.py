@@ -245,6 +245,45 @@ class Previews(unittest.TestCase):
             self.assertAlmostEqual(np.asarray(Image.open(out / "preview.jpg").convert("L")).mean(), 117, delta=3)
 
 
+class Local(unittest.TestCase):
+    """The lab on the photographer's own computer: this computer only, with the key of this start."""
+
+    def setUp(self):
+        self.old = web.LOCAL, web.LOCAL_KEY
+        web.LOCAL, web.LOCAL_KEY = True, "k" * 32
+        self.here = TestClient(web.app, base_url="http://127.0.0.1:8123")
+
+    def tearDown(self):
+        web.LOCAL, web.LOCAL_KEY = self.old
+
+    def test_only_this_computer(self):
+        """A website's name pointed at this computer (DNS rebinding) is turned away, key or not."""
+        far = TestClient(web.app, base_url="http://evil.example:8123")
+        self.assertEqual(far.get("/api/options", cookies={web.LOCAL_COOKIE: "k" * 32}).status_code, 403)
+
+    def test_the_key_opens_it(self):
+        self.assertEqual(self.here.get("/api/options").status_code, 403)
+        self.assertEqual(self.here.get("/api/options", cookies={web.LOCAL_COOKIE: "wrong"}).status_code, 403)
+        opened = self.here.get("/app?key=" + "k" * 32, follow_redirects=False)
+        self.assertEqual(opened.status_code, 303)
+        self.assertEqual(opened.headers["location"], "/app")
+        self.assertIn("samesite=strict", opened.headers["set-cookie"].lower())
+        self.assertIn("httponly", opened.headers["set-cookie"].lower())
+        options = self.here.get("/api/options", cookies={web.LOCAL_COOKIE: "k" * 32})
+        self.assertEqual(options.status_code, 200)
+        self.assertTrue(options.json()["local"])
+
+    def test_home_is_the_lab(self):
+        home = self.here.get("/", cookies={web.LOCAL_COOKIE: "k" * 32}, follow_redirects=False)
+        self.assertEqual((home.status_code, home.headers["location"]), (303, "/app"))
+
+    def test_installer_is_served(self):
+        web.LOCAL = False
+        script = client.get("/install.sh")
+        self.assertEqual(script.status_code, 200)
+        self.assertTrue(script.text.startswith("#!/bin/sh"))
+
+
 class Admin(unittest.TestCase):
     def test_password_when_there_are_no_accounts(self):
         self.assertEqual(client.get("/admin").status_code, 404)  # no way in set: it isn't there
