@@ -2,6 +2,8 @@
 
 *Developed the long way.*
 
+![One raw file: as the camera recorded it, and developed on Sunday 64, seen on a light box](.github/readme/flowers.jpg)
+
 Dyeroom develops your digital photographs, raw files or phone pictures, on simulated film.
 Not a preset laid over the picture: the light is exposed onto a modelled emulsion and taken
 through the chemistry, step by step.

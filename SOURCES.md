@@ -43,7 +43,8 @@ instructions (Kodak, Ilford), in words only.
 - **Schott KG3** transmission, from the Schott/Newport data sheet.
 - **The sample photograph** (`samples/sample-olympus-e-p7.orf`) and the test raws listed in
   `tools/sample_raws.txt`: [raw.pixls.us](https://raw.pixls.us), public domain (CC0). The
-  pictures in the site's guides (`dyeroom/web/static/guides`, `og`) are developed from them.
+  pictures in the site's guides (`dyeroom/web/static/guides`, `og`) and in the README are
+  developed from them.
 - **The portrait** on the About page (`dyeroom/web/static/about/djordje-janjic.jpg`) is
   Djordje Janjic's own and is not covered by the project's licence.
 
