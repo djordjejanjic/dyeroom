@@ -1,7 +1,5 @@
 # Dyeroom
 
-*Developed the long way.*
-
 <p align="center">
 I built Dyeroom for my own photographs, and it grew into a big project: a film model checked
 against its makers' data sheets, a darkroom that runs in the browser and on your own computer,
