@@ -161,7 +161,9 @@ def _app_browser():
     if sys.platform == "darwin":
         for name in MAC_BROWSERS:
             if any(Path(base, f"{name}.app").exists() for base in ("/Applications", Path.home() / "Applications")):
-                return lambda url: subprocess.run(["open", "-na", name, "--args", f"--app={url}"], check=False)
+                # not waited on: opened from the app's own icon, `open` may not come back at once
+                return lambda url: subprocess.Popen(["open", "-na", name, "--args", f"--app={url}"],
+                                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif sys.platform == "win32":
         roots = [os.environ.get(k) for k in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")]
         for exe in (Path(root, name) for name in WINDOWS_BROWSERS for root in roots if root):
@@ -336,7 +338,7 @@ def shortcut(home=None):
     home = Path(home or Path.home())
     if sys.platform == "win32":
         return _windows_shortcut(home)
-    command = f'"{sys.executable}" -I -m dyeroom.local open'
+    command = f'"{sys.executable}" -I -u -m dyeroom.local open'  # -u: its log is written as it goes
     if sys.platform == "darwin":
         app = home / "Applications" / "Dyeroom.app"
         (app / "Contents" / "MacOS").mkdir(parents=True, exist_ok=True)
@@ -394,7 +396,7 @@ def _windows_shortcut(home):
     quoted = lambda path: str(path).replace("'", "''")  # PowerShell single-quoted strings
     script = (f"$s = (New-Object -ComObject WScript.Shell).CreateShortcut('{quoted(link)}'); "
               f"$s.TargetPath = '{quoted(pythonw if pythonw.is_file() else sys.executable)}'; "
-              "$s.Arguments = '-I -m dyeroom.local open'; "
+              "$s.Arguments = '-I -u -m dyeroom.local open'; "
               f"$s.IconLocation = '{quoted(icon)}'; $s.WorkingDirectory = '{quoted(data)}'; "
               "$s.Description = 'Develop photographs on simulated film'; $s.Save()")
     subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], check=True,

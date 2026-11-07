@@ -62,7 +62,7 @@ class Shortcut(unittest.TestCase):
                 launcher = (made / "Contents" / "MacOS" / "Dyeroom").read_text(encoding="utf-8")
             else:
                 launcher = made.read_text(encoding="utf-8")
-            self.assertIn(f'"{sys.executable}" -I -m dyeroom.local open', launcher)
+            self.assertIn(f'"{sys.executable}" -I -u -m dyeroom.local open', launcher)
 
 
 if __name__ == "__main__":
