@@ -31,13 +31,19 @@ On macOS or Linux, in a terminal:
 curl -LsSf https://dyeroom.app/install.sh | sh
 ```
 
+On Windows, in PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex"
+```
+
 It installs [uv](https://docs.astral.sh/uv/), which brings its own Python, then Dyeroom, and
-adds Dyeroom to your applications. Open it from there, or type `dyeroom`. Your photographs stay
-on your computer: the lab runs there, uses all of it, and stops by itself when you close its
-window. Nothing needs administrator rights or a signed installer. Windows is on its way.
+adds Dyeroom to your applications or the Start menu. Open it from there, or type `dyeroom`.
+Your photographs stay on your computer: the lab runs there, uses all of it, and stops by itself
+when you close its window. Nothing needs administrator rights or a signed installer.
 
 ```sh
-dyeroom                      # open the lab (in an app window if you have Chrome, Edge or Brave)
+dyeroom                      # open the lab (in an app window in Chrome, Edge or Brave if you have one)
 dyeroom stop                 # stop it now
 dyeroom colourise-model      # fetch the model that colourises black-and-white originals (270 MB)
 dyeroom PHOTO.RAF            # or develop from the command line: a draft, into ./out
@@ -48,7 +54,8 @@ uv tool upgrade dyeroom      # update
 With [ExifTool](https://exiftool.org) installed, exports keep the camera's metadata. To remove
 it all: `uv tool uninstall dyeroom`, then delete Dyeroom from your applications and its folders
 (`~/Library/Application Support/Dyeroom` and `~/Library/Caches/Dyeroom` on macOS,
-`~/.local/share/dyeroom` and `~/.cache/dyeroom` on Linux).
+`~/.local/share/dyeroom` and `~/.cache/dyeroom` on Linux, `%LOCALAPPDATA%\Dyeroom` on Windows,
+where the Start menu entry is removed like any other).
 
 From source, for working on it: [CONTRIBUTING.md](CONTRIBUTING.md).
 

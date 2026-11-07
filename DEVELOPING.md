@@ -65,8 +65,13 @@ two caches (about 10 s). `tools/cost.py` measures this on any machine.
 ## On your own computer (`local.py`)
 
 `dyeroom` with no photographs starts the web app on this computer and opens it; installed with
-`curl -LsSf https://dyeroom.app/install.sh | sh` (served from `dyeroom/web/install.sh`), which
-installs uv if needed and then `uv tool install --python 3.12 dyeroom`, and runs `dyeroom shortcut`.
+`curl -LsSf https://dyeroom.app/install.sh | sh` on macOS and Linux, or on Windows
+`powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex"` (served from
+`dyeroom/web/install.sh` and `install.ps1`), which install uv if needed, then
+`uv tool install --python 3.12 dyeroom` (on Windows on Arm, Python for Intel: pi-heif has no Arm
+build there), and run `dyeroom shortcut`. CI (`install` in `.github/workflows/tests.yml`) runs
+the installer on all three, develops the sample through the lab and opens it from its shortcut
+(`tools/smoke_local.py`).
 
 * **Private to the computer** (`DYEROOM_LOCAL=1`, set by `local.py`): it listens on 127.0.0.1
   at a free port. The window opens `/app?key=…` with a key made at each start; the server swaps
@@ -87,8 +92,13 @@ installs uv if needed and then `uv tool install --python 3.12 dyeroom`, and runs
 * **The window:** an app window (`--app=`) in Chrome, Edge, Chromium or Brave when there is one,
   else the default browser. `dyeroom shortcut` adds Dyeroom.app to `~/Applications` (macOS: a
   shell script, built on the computer, so it needs no signing; icon made with `sips` and
-  `iconutil`) or a desktop entry (Linux). Both run the installed Python with `-I`, so a
-  `dyeroom` folder where you happen to be is never imported instead.
+  `iconutil`), a desktop entry (Linux) or a Start menu shortcut (Windows: to `pythonw.exe`, so
+  no console window, with an icon Pillow makes, written by PowerShell). All run the installed
+  Python with `-I`, so a `dyeroom` folder where you happen to be is never imported instead.
+* **Windows:** the lab starts detached (`DETACHED_PROCESS`), so closing the terminal leaves it
+  running; its tools run with `CREATE_NO_WINDOW`; `dyeroom stop` ends it at once (Windows has no
+  gentle signal) and removes `lab.json` itself; memory comes from `GlobalMemoryStatusEx`. Text
+  files are read and written as UTF-8 throughout, not in the system's code page.
 * **Colourising:** the model is not in the package; `dyeroom colourise-model` fetches it from
   the GitHub release `colourise-model-1` and checks its SHA-256.
 * **Releasing:** a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds the wheel and

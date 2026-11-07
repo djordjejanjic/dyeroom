@@ -32,7 +32,7 @@ Dyeroom is written in Python. A raw file is read, turned into light that would h
 
 I did not start from nothing. Dyeroom uses published work on spectral reconstruction and colour appearance, an open-source model for colourising black-and-white photographs, and the public-domain raw files collected at raw.pixls.us. Another open-source film simulation, [spektrafilm](https://github.com/andreavolpato/spektrafilm) by Andrea Volpato, is a related project, and Dyeroom credits its published history for the densitometer response it uses. The credits are in [How Dyeroom works](/how-it-works#standing-on-other-peoples-work).
 
-Dyeroom is free software too, under the GNU Affero General Public License. The source code is on [GitHub](https://github.com/djordjejanjic/dyeroom), with the whole model written down, and you can run Dyeroom on your own Mac or Linux computer with one command: `curl -LsSf https://dyeroom.app/install.sh | sh`.
+Dyeroom is free software too, under the GNU Affero General Public License. The source code is on [GitHub](https://github.com/djordjejanjic/dyeroom), with the whole model written down, and you can run Dyeroom on your own computer with one command: `curl -LsSf https://dyeroom.app/install.sh | sh` on a Mac or Linux, `powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex"` on Windows.
 
 Dyeroom is an independent project. It is not affiliated with, sponsored by or endorsed by any film maker. The footer names the films the two stocks are modelled on and says whose trademarks those are.
 
