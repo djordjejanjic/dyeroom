@@ -169,7 +169,7 @@ def _on_grid(pairs):
 
 def status_a_response():
     """ISO 5-3 Status A densitometer responsivity, (81, 3) for R, G, B."""
-    data = json.loads(STATUS_A.read_text())
+    data = json.loads(STATUS_A.read_text(encoding="utf-8"))
     return np.nan_to_num(np.stack([_on_grid(data[c]) for c in ("red", "green", "blue")], axis=1))
 
 
@@ -211,7 +211,7 @@ def _unmix(target, base, dyes, response, iterations=30):
 
 
 def load(verbose=False):
-    sheet = json.loads(DATA.read_text())
+    sheet = json.loads(DATA.read_text(encoding="utf-8"))
     sensitivity = np.nan_to_num(10.0 ** np.stack([_on_grid(sheet["log_sensitivity"][k]) for k in
                                                   ("cyan_forming", "magenta_forming", "yellow_forming")], axis=1))
     dyes = _extrapolate_dyes(np.stack([_on_grid(sheet["dye_density"][k]) for k in ("cyan", "magenta", "yellow")],

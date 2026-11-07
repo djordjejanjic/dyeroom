@@ -5,10 +5,15 @@ frees it afterwards, and keeps a crashing decoder from taking the server down.
 """
 import json
 import os
-import resource
 import sys
+import time
 import traceback
 from pathlib import Path
+
+try:
+    import resource
+except ImportError:  # Windows
+    resource = None
 
 
 import numpy as np
@@ -21,18 +26,50 @@ THUMB_EDGE = 360
 EARLY_EDGE = 1200  # the raw, neutral, shown while it develops
 
 
+def replace(source, target):
+    """os.replace, waiting a moment if Windows has the target open (the server reading it)."""
+    for _ in range(40):
+        try:
+            return os.replace(source, target)
+        except PermissionError:
+            time.sleep(0.05)
+    return os.replace(source, target)
+
+
 def write_status(job_dir, **status):
     tmp = job_dir / "status.json.tmp"
-    tmp.write_text(json.dumps(status))
-    os.replace(tmp, job_dir / "status.json")
+    tmp.write_text(json.dumps(status), encoding="utf-8")
+    replace(tmp, job_dir / "status.json")
 
 
 def usage():
     """Processor seconds this development used (with the tools it ran) and its peak memory."""
+    if resource is None:
+        return {"cpu": round(time.process_time(), 2), "peak_mb": _windows_peak_mb()}
     own, tools = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu = own.ru_utime + own.ru_stime + tools.ru_utime + tools.ru_stime
     per_mb = 1024 * 1024 if sys.platform == "darwin" else 1024  # ru_maxrss: bytes on macOS, KiB on Linux
     return {"cpu": round(cpu, 2), "peak_mb": round(own.ru_maxrss / per_mb)}
+
+
+def _windows_peak_mb():
+    """This process's peak working set on Windows, in MB (0 if it cannot be read)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Counters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD)] + [
+            (name, ctypes.c_size_t) for name in ("PeakWorkingSetSize", "WorkingSetSize", "QuotaPeakPagedPoolUsage",
+                                                 "QuotaPagedPoolUsage", "QuotaPeakNonPagedPoolUsage",
+                                                 "QuotaNonPagedPoolUsage", "PagefileUsage", "PeakPagefileUsage")]
+    counters = Counters()
+    counters.cb = ctypes.sizeof(counters)
+    try:
+        ok = ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(),
+                                                      ctypes.byref(counters), counters.cb)
+    except (AttributeError, OSError):
+        return 0
+    return round(counters.PeakWorkingSetSize / 1024 ** 2) if ok else 0
 
 
 def _jpeg(encoded, path, display, edge):
@@ -41,7 +78,7 @@ def _jpeg(encoded, path, display, edge):
 
 def main(job_dir):
     job_dir = Path(job_dir)
-    params = json.loads((job_dir / "params.json").read_text())
+    params = json.loads((job_dir / "params.json").read_text(encoding="utf-8"))
     total = len(pipeline.stages(params.get("film", "sunday64"))) + 1
 
     def progress(i, name):
@@ -79,7 +116,7 @@ def main(job_dir):
         _jpeg(neutral.preview(cap, VIEW_EDGE, space), job_dir / "before.jpg", display, VIEW_EDGE)
         write_status(job_dir, state="done", info=info, usage=usage())
     except Exception as exc:  # report, never crash silently
-        (job_dir / "error.log").write_text(traceback.format_exc())
+        (job_dir / "error.log").write_text(traceback.format_exc(), encoding="utf-8")
         message = str(exc) if isinstance(exc, ValueError) else f"{type(exc).__name__}: {exc}"
         write_status(job_dir, state="failed", error=message[:300], code=getattr(exc, "code", None), usage=usage())
         sys.exit(1)

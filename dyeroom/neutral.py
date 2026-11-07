@@ -37,7 +37,7 @@ GREY_LIGHTNESS = 57.5
 @lru_cache(maxsize=1)
 def _tone_table():
     path = Path(__file__).parent / "data" / "acr3_default_tone_curve.txt"
-    lines = [line for line in path.read_text().splitlines() if not line.startswith("#")]
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith("#")]
     return np.array(" ".join(lines).split(), dtype=np.float32)
 
 

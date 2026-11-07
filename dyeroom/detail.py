@@ -137,12 +137,14 @@ def apply(rgb, undo=(0.0, 0.0), sharpness=0, clarity=0):
         change = np.zeros_like(luma)
         if strength and radius:
             change += strength * (cv2.GaussianBlur(luma, (0, 0), radius) - luma)
+        # At least half a pixel: narrower, the blur is all but nothing and the slider does nothing
+        # (a picture under 2000 px); drafts and full size are wider than that.
         if sharpness < 0:  # towards a soft lens: a blur of about 1.6 px at 4000 px wide
             soft = luma + change
-            change += (-sharpness / 100) * 0.75 * (cv2.GaussianBlur(soft, (0, 0), 0.0004 * long_edge) - soft)
+            change += (-sharpness / 100) * 0.75 * (cv2.GaussianBlur(soft, (0, 0), max(0.5, 0.0004 * long_edge)) - soft)
         elif sharpness > 0:  # an unsharp mask of about 1 px at 4000 px wide
             soft = luma + change
-            change += (sharpness / 100) * 1.2 * (soft - cv2.GaussianBlur(soft, (0, 0), 0.00025 * long_edge))
+            change += (sharpness / 100) * 1.2 * (soft - cv2.GaussianBlur(soft, (0, 0), max(0.5, 0.00025 * long_edge)))
         out += change[..., None]
         del luma, change
     np.maximum(out, 0.0, out=out)

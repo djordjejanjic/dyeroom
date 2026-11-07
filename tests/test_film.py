@@ -15,7 +15,7 @@ class DataSheet(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.film = film_model.load()
-        cls.sheet = json.loads(film_model.DATA.read_text())
+        cls.sheet = json.loads(film_model.DATA.read_text(encoding="utf-8"))
 
     def test_status_a_curves_match_the_data_sheet(self):
         """The dye amounts, seen through the dye spectra and a Status A densitometer, give

@@ -123,7 +123,7 @@ class Film:
 
 @lru_cache(maxsize=1)
 def load():
-    d = json.loads(DATA.read_text())
+    d = json.loads(DATA.read_text(encoding="utf-8"))
     wl, log_s = np.array(d["spectral_sensitivity"]["density_1.0"], float).T
     log_s = np.interp(spectra.WL, wl, log_s, right=np.nan)
     last = np.flatnonzero(np.isfinite(log_s))[-1]

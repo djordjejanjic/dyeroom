@@ -33,4 +33,4 @@ packages = ["dyeroom", "dyeroom.web"]
 [tool.setuptools.package-data]
 dyeroom = ["data/*.json", "data/*.txt", "data/cache/*.npz", "data/cache/*.npy", "macraw.swift"]
 "dyeroom.web" = ["static/*", "static/og/*", "static/guides/*", "static/about/*", "legal/*.html", "content/*.md",
-                 "install.sh"]
+                 "install.sh", "install.ps1"]

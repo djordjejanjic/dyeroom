@@ -69,7 +69,7 @@ from .. import adjust, colourise, metadata, mono, output, pipeline, spectra
 from ..capture import FORMATS, RAW_SUFFIXES
 from ..spectra import FILTERS
 from ..viewing import VIEWINGS
-from . import accounts, alerts, billing, content, limits, pages, site, sso
+from . import accounts, alerts, billing, content, limits, pages, site, sso, worker
 from .stats import Stats
 
 DATA = Path(os.environ.get("DYEROOM_DATA", "web-data")).resolve()
@@ -92,6 +92,7 @@ LOCAL = os.environ.get("DYEROOM_LOCAL", "0") in ("1", "true", "yes")
 LOCAL_KEY = os.environ.get("DYEROOM_LOCAL_KEY", "")
 LOCAL_COOKIE = "dyeroom_key"
 LOCAL_STOP_SECONDS = 600
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # Windows: no console flashing up for each development
 PUBLIC_URL = os.environ.get("DYEROOM_PUBLIC_URL", "").rstrip("/")
 ADMINS = {e.strip().lower() for e in os.environ.get("DYEROOM_ADMIN_EMAILS", "").split(",") if e.strip()}
 ADMIN_PASSWORD = os.environ.get("DYEROOM_ADMIN_PASSWORD", "")
@@ -307,27 +308,27 @@ async def _upload_checks(request, size, fingerprint):
 
 def _status(job_dir):
     try:
-        return json.loads((job_dir / "status.json").read_text())
+        return json.loads((job_dir / "status.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {"state": "unknown"}
 
 
 def _write_status(job_dir, **status):
     tmp = job_dir / "status.json.tmp"
-    tmp.write_text(json.dumps(status))
-    os.replace(tmp, job_dir / "status.json")
+    tmp.write_text(json.dumps(status), encoding="utf-8")
+    worker.replace(tmp, job_dir / "status.json")
 
 
 def _run(job_id):
     job_dir = JOBS / job_id
     try:
         subprocess.run([sys.executable, "-m", "dyeroom.web.worker", str(job_dir)], timeout=TIMEOUT,
-                       capture_output=True, env=_worker_env())
+                       capture_output=True, env=_worker_env(), creationflags=NO_WINDOW)
     except subprocess.TimeoutExpired:
         _write_status(job_dir, state="failed", error=f"Took longer than {TIMEOUT} s and was stopped", crash=True)
     if _status(job_dir).get("state") not in ("done", "failed"):
         _write_status(job_dir, state="failed", error="The developer stopped unexpectedly (out of memory?)", crash=True)
-    params = json.loads((job_dir / "params.json").read_text())
+    params = json.loads((job_dir / "params.json").read_text(encoding="utf-8"))
     if store and params.get("charged"):
         store.settle(params["upload_id"], _status(job_dir).get("state") == "done")
     _sweep_now.set()  # a photograph let go of while it was developing can go now
@@ -346,7 +347,7 @@ def _record(job_id, job):
     job_dir = JOBS / job_id
     status = _status(job_dir)
     try:
-        params = json.loads((job_dir / "params.json").read_text())
+        params = json.loads((job_dir / "params.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return
     state = status.get("state")
@@ -470,7 +471,7 @@ def _use(upload_id):
 
 def _upload_of(job_dir):
     try:
-        return json.loads((job_dir / "params.json").read_text()).get("upload_id")
+        return json.loads((job_dir / "params.json").read_text(encoding="utf-8")).get("upload_id")
     except (OSError, ValueError):
         return None
 
@@ -557,7 +558,7 @@ def _cleanup():
 def _in_memory(path):
     """True when the path is on a memory file system (Linux tmpfs or ramfs)."""
     try:
-        mounts = [line.split()[1:3] for line in Path("/proc/mounts").read_text().splitlines()]
+        mounts = [line.split()[1:3] for line in Path("/proc/mounts").read_text(encoding="utf-8").splitlines()]
     except OSError:
         return False
     target = str(path)
@@ -665,6 +666,7 @@ def _make_preview(upload_id):
         source = next((UPLOADS / upload_id).iterdir(), None)
         if source is not None:
             subprocess.run([sys.executable, "-m", "dyeroom.web.preview", str(source), str(out)], timeout=60,
+                           creationflags=NO_WINDOW,
                            capture_output=True, env=_worker_env())
     except (OSError, subprocess.SubprocessError) as exc:
         log.info("No preview for %s: %s", upload_id, exc)
@@ -886,7 +888,7 @@ def create_job(req: JobRequest, request: Request):
     job_dir.mkdir()
     params = req.model_dump() | {"source": str(source), "name": source.name, "charged": charged,
                                  "long_edge": None if req.size == "full" else DRAFT_EDGE}
-    (job_dir / "params.json").write_text(json.dumps(params))
+    (job_dir / "params.json").write_text(json.dumps(params), encoding="utf-8")
     _write_status(job_dir, state="queued")
     if sample:
         _sample_jobs[settings] = job_id
@@ -914,7 +916,7 @@ def job_file(job_id: str, filename: str, download: bool = False):
     path = JOBS / job_id / filename
     if not path.is_file():
         raise HTTPException(404)
-    params = json.loads((JOBS / job_id / "params.json").read_text())
+    params = json.loads((JOBS / job_id / "params.json").read_text(encoding="utf-8"))
     _use(params.get("upload_id"))
     nice = f"{Path(params['name']).stem}_{params.get('film', 'sunday64')}{path.suffix}"
     return FileResponse(path, media_type=FILES[filename], filename=nice if download else None,
@@ -927,7 +929,7 @@ def _exported(job_id, fmt, adjustments, geometry=None):
     job_dir = JOBS / job_id
     if not ID.match(job_id) or not (job_dir / "slide16.npy").is_file():
         raise HTTPException(404, GONE)
-    params = json.loads((job_dir / "params.json").read_text())
+    params = json.loads((job_dir / "params.json").read_text(encoding="utf-8"))
     _use(params.get("upload_id"))
     name = f"{Path(params['source']).stem}_{params.get('film', 'sunday64')}.{fmt}"
     if fmt == "jpg" and adjust.is_identity(adjustments) and adjust.geometry_is_identity(geometry) \
@@ -1434,15 +1436,17 @@ app.mount("/static", Static(directory=STATIC), name="static")
 def licences():
     """Licences of the data and models Dyeroom is built on."""
     data = Path(__file__).resolve().parents[1] / "data"
-    parts = [f"{'=' * 78}\n{path.name}\n{'=' * 78}\n\n{path.read_text()}" for path in sorted(data.glob("LICENSE-*.txt"))]
+    parts = [f"{'=' * 78}\n{path.name}\n{'=' * 78}\n\n{path.read_text(encoding="utf-8")}" for path in sorted(data.glob("LICENSE-*.txt"))]
     return Response("\n\n".join(parts), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/install.sh")
-def install_script():
-    """The installer for macOS and Linux:  curl -LsSf https://dyeroom.app/install.sh | sh"""
-    return Response((Path(__file__).parent / "install.sh").read_text(), media_type="text/x-shellscript; charset=utf-8",
-                    headers={"Cache-Control": "public, max-age=300"})
+@app.get("/install.ps1")
+def install_script(request: Request):
+    """The installers. macOS and Linux:  curl -LsSf https://dyeroom.app/install.sh | sh
+    Windows:  powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex" """
+    script = (Path(__file__).parent / request.url.path.lstrip("/")).read_text(encoding="utf-8")
+    return Response(script, media_type="text/plain; charset=utf-8", headers={"Cache-Control": "public, max-age=300"})
 
 
 @app.get("/api/here")
@@ -1560,7 +1564,7 @@ def sitemap(request: Request):
 @app.api_route("/app", methods=["GET", "HEAD"])
 def index():
     """The app, with asset links stamped by file time so browsers never run stale code."""
-    html = (STATIC / "index.html").read_text()
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
     for asset in ("style.css", "grade.js", "lab.js", "app.js"):
         stamp = int((STATIC / asset).stat().st_mtime)
         html = html.replace(f"/static/{asset}", f"/static/{asset}?v={stamp}")

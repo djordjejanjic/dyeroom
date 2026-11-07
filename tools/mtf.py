@@ -22,7 +22,7 @@ FREQUENCIES = (2.5, 5, 7.5, 10, 15, 20, 30, 40, 50, 60, 70, 80)
 
 
 def published_mtf():
-    f, response = np.array(json.loads(film_model.DATA.read_text())["mtf"]["cycles_per_mm_and_response"]).T
+    f, response = np.array(json.loads(film_model.DATA.read_text(encoding="utf-8"))["mtf"]["cycles_per_mm_and_response"]).T
     return {freq: float(np.interp(np.log(freq), np.log(f), response)) for freq in FREQUENCIES}
 
 

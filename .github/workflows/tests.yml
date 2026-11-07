@@ -2,7 +2,6 @@ name: Tests
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -12,7 +11,6 @@ jobs:
       matrix:
         os: [ubuntu-22.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.os == 'windows-latest' }}  # Windows support is being worked on
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -24,7 +22,36 @@ jobs:
       - name: ExifTool (metadata tests)
         if: runner.os == 'macOS'
         run: brew install exiftool
+      - name: ExifTool (metadata tests)
+        if: runner.os == 'Windows'
+        run: choco install exiftool -y --no-progress
       - name: Install
-        run: python -m pip install -e ".[web,colourise,test]"
+        run: python -m pip install -e ".[test]"
       - name: Test
         run: python -m unittest discover -s tests -v
+
+  # The way people get it: the installer, then the lab developing the sample photograph.
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build the wheel
+        run: python -m pip install build && python -m build --wheel
+      - name: Install (macOS, Linux)
+        if: runner.os != 'Windows'
+        run: DYEROOM_PACKAGE="$(ls "$PWD"/dist/*.whl)" sh dyeroom/web/install.sh
+      - name: Install (Windows PowerShell)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $env:DYEROOM_PACKAGE = (Get-ChildItem dist\*.whl).FullName
+          powershell -ExecutionPolicy ByPass -File dyeroom\web\install.ps1
+      - name: The lab develops a photograph
+        run: python tools/smoke_local.py samples/sample-olympus-e-p7.orf

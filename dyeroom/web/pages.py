@@ -84,7 +84,7 @@ def _facts(privacy):
 def legal(name, privacy=None):
     privacy = privacy or {}
     accounts = privacy.get("accounts", True)
-    body = (LEGAL / f"{name}.html").read_text()
+    body = (LEGAL / f"{name}.html").read_text(encoding="utf-8")
     keep = {"accounts": accounts, "free": not accounts}
     body = re.sub(r"<!--if (\w+)-->(.*?)<!--end-->", lambda m: m.group(2) if keep[m.group(1)] else "", body,
                   flags=re.S)

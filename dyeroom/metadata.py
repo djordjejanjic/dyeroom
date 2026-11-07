@@ -49,9 +49,12 @@ def carry_over(original, exported, ai_colours=False):
     if ai_colours:
         command.append(f"-XMP-iptcExt:DigitalSourceType={AI_EDITED}")
     # ExifTool reads a stranger's file: it gets what it needs to run, and none of the server's secrets.
-    env = {k: v for k, v in os.environ.items() if k in ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TMPDIR")}
+    env = {k: v for k, v in os.environ.items()
+           if k.upper() in ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TMPDIR",
+                            "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PATHEXT")}  # the last five: Windows
     try:
-        run = subprocess.run(command + [str(exported)], capture_output=True, text=True, timeout=60, env=env)
+        run = subprocess.run(command + [str(exported)], capture_output=True, text=True, timeout=60, env=env,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except (OSError, subprocess.SubprocessError) as exc:
         log.warning("Metadata not copied to %s: %s", exported, exc)
         return False

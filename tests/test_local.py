@@ -37,9 +37,9 @@ class Shortcut(unittest.TestCase):
             if sys.platform == "darwin":
                 info = plistlib.loads((made / "Contents" / "Info.plist").read_bytes())
                 self.assertEqual(info["CFBundleIdentifier"], "com.sysi.dyeroom")
-                launcher = (made / "Contents" / "MacOS" / "Dyeroom").read_text()
+                launcher = (made / "Contents" / "MacOS" / "Dyeroom").read_text(encoding="utf-8")
             else:
-                launcher = made.read_text()
+                launcher = made.read_text(encoding="utf-8")
             self.assertIn(f'"{sys.executable}" -I -m dyeroom.local open', launcher)
 
 

@@ -30,11 +30,11 @@ def develop(raw, film, size, scratch):
               "filter": "auto", "view": "lightbox", "display": "p3", "grain": True, "tiff": False, "rating": 400,
               "grade": 3, "bw_filter": "none", "toning": "none", "colourise": False, "format": "35mm",
               "long_edge": None if size == "full" else 2400}
-    (job_dir / "params.json").write_text(json.dumps(params))
+    (job_dir / "params.json").write_text(json.dumps(params), encoding="utf-8")
     began = time.time()
     subprocess.run([sys.executable, "-m", "dyeroom.web.worker", str(job_dir)], cwd=ROOT, capture_output=True,
                    env={**os.environ, "TMPDIR": str(scratch)})
-    status = json.loads((job_dir / "status.json").read_text())
+    status = json.loads((job_dir / "status.json").read_text(encoding="utf-8"))
     if status.get("state") != "done":
         sys.exit(f"{raw.name}: {status.get('error')}")
     return time.time() - began, status["usage"]["cpu"], status["usage"]["peak_mb"], status["info"]

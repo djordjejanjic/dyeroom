@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-_DIR = tempfile.TemporaryDirectory()
+_DIR = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)  # Windows: the app's databases are open
 os.environ.update(DYEROOM_DATA=_DIR.name, DYEROOM_WORK=str(Path(_DIR.name) / "work"), DYEROOM_ACCOUNTS="0")
 for _name in ("DYEROOM_LEGAL_NAME", "DYEROOM_LEGAL_ADDRESS", "DYEROOM_CONTACT_EMAIL", "DYEROOM_LEGAL_COUNTRY",
               "DYEROOM_HOSTING", "DYEROOM_USER", "DYEROOM_PASSWORD"):
@@ -37,9 +37,9 @@ def fake_job(name="DSCF0001.RAF", film="sunday64", shape=(40, 60)):
     job_dir.mkdir()
     rng = np.random.default_rng(1)
     (job_dir / "params.json").write_text(json.dumps({"source": f"/nowhere/{name}", "name": name, "film": film,
-                                                     "display": "srgb", "upload_id": None}))
+                                                     "display": "srgb", "upload_id": None}), encoding="utf-8")
     np.save(job_dir / "slide16.npy", rng.integers(0, 65535, (*shape, 3), dtype=np.uint16))
-    (job_dir / "status.json").write_text(json.dumps({"state": "done", "info": {}}))
+    (job_dir / "status.json").write_text(json.dumps({"state": "done", "info": {}}), encoding="utf-8")
     return job_id
 
 
@@ -282,6 +282,10 @@ class Local(unittest.TestCase):
         script = client.get("/install.sh")
         self.assertEqual(script.status_code, 200)
         self.assertTrue(script.text.startswith("#!/bin/sh"))
+        windows = client.get("/install.ps1")
+        self.assertEqual(windows.status_code, 200)
+        self.assertIn("uv tool install", windows.text)
+        self.assertEqual(client.get("/install.bat").status_code, 404)
 
 
 class Admin(unittest.TestCase):
@@ -488,6 +492,7 @@ class Statistics(unittest.TestCase):
         self.assertEqual(day["sizes"]["draft"]["median_cpu"], 36)
         self.assertEqual(len(s.failures(time.time() - 60)), 1)
         self.assertAlmostEqual(stats.cost_per_frame(36, 4, eur_month=40.0), 40.0 / (4 * 30 * 86400) * 36)
+        self.addCleanup(s.close)
         page = pages.admin({"waiting": 0, "oldest_wait": 0, "developing": 0, "workers": 1, "photos_held": 0,
                             "held_gb": 0, "space_free_gb": 1, "space_gb": 2, "in_memory": True, "cores": 4,
                             "last_backup": None, "alerts_to": False, "legal_missing": []},

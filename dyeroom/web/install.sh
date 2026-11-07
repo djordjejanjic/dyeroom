@@ -11,7 +11,8 @@ say() { printf '%s\n' "$*"; }
 
 case "$(uname -s)" in
   Darwin|Linux) ;;
-  *) say "This installer is for macOS and Linux. On Windows, use https://dyeroom.app for now."; exit 1 ;;
+  *) say "This installer is for macOS and Linux. On Windows, in PowerShell:"
+     say '  powershell -ExecutionPolicy ByPass -c "irm https://dyeroom.app/install.ps1 | iex"'; exit 1 ;;
 esac
 
 if ! command -v uv >/dev/null 2>&1; then

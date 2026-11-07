@@ -49,6 +49,9 @@ class Stats:
         self.db.executescript(SCHEMA)
         self.lock = threading.Lock()
 
+    def close(self):
+        self.db.close()
+
     def _write(self, sql, args):
         with self.lock:
             self.db.execute(sql, args)

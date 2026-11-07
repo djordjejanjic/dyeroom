@@ -5,6 +5,7 @@ Run:  .venv/bin/python -m unittest discover -s tests
 import hashlib
 import hmac
 import json
+import os
 import tempfile
 import time
 import unittest
@@ -325,7 +326,8 @@ class Backups(StoreCase):
     def test_snapshot_restores_accounts_and_fingerprint_key(self):
         self.store.grant(self.user, 36, "roll", "txn_b")
         copy = self.store.snapshot(Path(self.dir.name) / "backups")
-        self.assertEqual(oct(copy.stat().st_mode & 0o777), "0o600")
+        if os.name != "nt":  # Windows files have no owner-only mode bits
+            self.assertEqual(oct(copy.stat().st_mode & 0o777), "0o600")
         restored = accounts.Store(copy)
         self.assertEqual(restored.summary(self.user)["frames"], self.store.summary(self.user)["frames"])
         self.assertEqual(restored.key, self.store.key)  # free re-adds keep working after a restore

@@ -21,6 +21,7 @@ THUMB_EDGE = 360   # the frames list
 SMALLEST = 1000    # an embedded JPEG smaller than this is not worth showing large
 IMAGES = {".jpg", ".jpeg", ".heic", ".heif", ".tif", ".tiff", ".png"}
 Image.MAX_IMAGE_PIXELS = 80_000_000  # as capture.py: larger pictures are refused
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # Windows: no console flashing up
 pi_heif.register_heif_opener()
 # LibRaw's flip: how the camera was held, as the turn the picture needs
 TURNS = {3: Image.Transpose.ROTATE_180, 5: Image.Transpose.ROTATE_90, 6: Image.Transpose.ROTATE_270}
@@ -55,14 +56,16 @@ def _from_exiftool(path):
     """The largest JPEG ExifTool finds in a raw LibRaw cannot open (a very new camera)."""
     found = []
     for tag in ("JpgFromRaw", "PreviewImage", "OtherImage"):
-        run = subprocess.run(["exiftool", "-b", f"-{tag}", str(path)], capture_output=True, timeout=30)
+        run = subprocess.run(["exiftool", "-b", f"-{tag}", str(path)], capture_output=True, timeout=30,
+                             creationflags=NO_WINDOW)
         if run.returncode == 0 and run.stdout[:2] == b"\xff\xd8":
             found.append(run.stdout)
     if not found:
         return None
     img, turned = _jpeg(max(found, key=len))
     if not turned:
-        run = subprocess.run(["exiftool", "-n", "-s3", "-Orientation", str(path)], capture_output=True, timeout=30)
+        run = subprocess.run(["exiftool", "-n", "-s3", "-Orientation", str(path)], capture_output=True, timeout=30,
+                             creationflags=NO_WINDOW)
         img = ImageOps.exif_transpose(_oriented(img, run.stdout.strip()))
     return img
 
