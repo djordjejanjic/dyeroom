@@ -192,8 +192,10 @@ def open_lab(show=True, foreground=False):
         print("Starting the lab...")
         if sys.platform == "darwin" and not sys.stdout.isatty():  # opened from its icon: say something
             note = 'display notification "Starting the lab, a moment." with title "Dyeroom"'
-            subprocess.run(["osascript", "-e", note],
-                           capture_output=True, check=False)
+            try:  # never wait on it: with no one logged in to see it, it may not return
+                subprocess.run(["osascript", "-e", note], capture_output=True, check=False, timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
         info = _start()
         from . import metadata
         if not metadata.available():
@@ -269,7 +271,8 @@ def shortcut(home=None):
                            "CFBundleShortVersionString": _version(),
                            "LSUIElement": True}, f)  # it opens the window and is gone: no Dock icon of its own
         launcher = app / "Contents" / "MacOS" / "Dyeroom"
-        launcher.write_text(f"#!/bin/sh\nexec {command}\n", encoding="utf-8")
+        log = folders()[1] / "open.log"  # what it says, opened from the icon, for when it does not open
+        launcher.write_text(f'#!/bin/sh\nmkdir -p "{log.parent}"\nexec {command} >> "{log}" 2>&1\n', encoding="utf-8")
         launcher.chmod(0o755)
         try:
             _mac_icon(app / "Contents" / "Resources" / "Dyeroom.icns")

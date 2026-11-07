@@ -63,6 +63,11 @@ def from_the_shortcut():
         except (OSError, ValueError, KeyError):
             pass
         time.sleep(0.5)
+    cache = lab_file().parent if sys.platform == "win32" else (
+        Path.home() / "Library" / "Caches" / "Dyeroom" if sys.platform == "darwin" else Path.home() / ".cache" / "dyeroom")
+    for name in ("open.log", "lab.log", "Cache/lab.log"):
+        if (cache / name).is_file():
+            print(f"--- {name}\n" + (cache / name).read_text(encoding="utf-8", errors="replace")[-3000:])
     raise AssertionError("opening the shortcut started no lab")
 
 
